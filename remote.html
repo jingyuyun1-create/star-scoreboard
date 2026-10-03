@@ -23,10 +23,6 @@
         .panel { background: #1a1b20; border: 1px solid #2e3038; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
         .panel-title { font-size: 13px; font-weight: 900; color: #ff5722; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
-        .status-bar { font-size: 11px; padding: 5px; border-radius: 4px; background: #0d0e11; color: #888; text-align: center; font-weight: bold; margin-bottom: 8px; }
-        .status-online { color: #2ed573; border: 1px solid #2ed573; }
-        .status-offline { color: #ff5722; border: 1px solid #ff5722; }
-
         .input-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
         input[type="text"] { background: #0f1013; border: 1px solid #3a3d4a; color: #fff; padding: 6px; border-radius: 4px; font-weight: 700; font-size: 13px; outline: none; }
         input[type="text"]:focus { border-color: #ff5722; }
@@ -57,18 +53,18 @@
         .p-input { width: 56px; text-align: center; flex-shrink: 0; }
         .map-input { width: 58px; text-align: center; flex-shrink: 0; }
 
-        /* 하단 방송 송출 ON/OFF 원버튼 스타일 */
+        /* 방송 송출 ON/OFF 토글 버튼 스타일 */
         .btn-broadcast {
             width: 100%;
-            padding: 12px 0;
-            font-size: 15px;
+            padding: 10px 0;
+            font-size: 14px;
             font-weight: 900;
             border-radius: 6px;
             border: none;
             cursor: pointer;
             transition: all 0.2s;
             letter-spacing: 1px;
-            margin-top: 4px;
+            margin-bottom: 8px;
         }
         .btn-broadcast.on {
             background: #2ed573;
@@ -100,7 +96,10 @@
             </div>
         </div>
         
-        <div id="status-text" class="status-bar status-offline">송출 화면 연동 중... 🟡</div>
+        <!-- 방송 송출 ON/OFF 토글 버튼 (상단 이동) -->
+        <button id="btn-broadcast-toggle" class="btn-broadcast on" onclick="toggleBroadcast()">
+            방송송출 ON 🟢
+        </button>
 
         <!-- ACE 탭 선택 시 숨겨지는 영역 -->
         <div id="league-title-section" class="input-row">
@@ -141,11 +140,6 @@
         <div id="matches-container"></div>
     </div>
 
-    <!-- 하단 방송 송출 ON/OFF 토글 원버튼 -->
-    <button id="btn-broadcast-toggle" class="btn-broadcast on" onclick="toggleBroadcast()">
-        방송송출 ON 🟢
-    </button>
-
 <script>
     const ROOM_TARGETS = {
         'set1': 'star-proleague-room-set1',
@@ -170,7 +164,6 @@
         });
 
         peer.on('error', () => {
-            updateStatus();
             setTimeout(initPeer, 3000);
         });
     }
@@ -185,36 +178,18 @@
 
                 conn.on('open', () => {
                     conns[tab] = conn;
-                    updateStatus();
                     sendTabData(tab);
                 });
 
                 conn.on('close', () => {
                     conns[tab] = null;
-                    updateStatus();
                 });
 
                 conn.on('error', () => {
                     conns[tab] = null;
-                    updateStatus();
                 });
             }
         });
-    }
-
-    function updateStatus() {
-        const el = document.getElementById('status-text');
-        if (!el) return;
-
-        const isCurrentConnected = conns[currentTab] && conns[currentTab].open;
-        
-        if (isCurrentConnected) {
-            el.innerText = `[${currentTab.toUpperCase()}] 송출 화면 연동 성공 🟢`;
-            el.className = 'status-bar status-online';
-        } else {
-            el.innerText = `[${currentTab.toUpperCase()}] 송출 화면 연결 대기 중... 🟡`;
-            el.className = 'status-bar status-offline';
-        }
     }
 
     function switchTab(tabName) {
@@ -240,7 +215,6 @@
 
         renderMatches();
         loadSavedData();
-        updateStatus();
     }
 
     function renderMatches() {
