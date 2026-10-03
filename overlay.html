@@ -59,8 +59,8 @@
     </div>
 
     <script>
-        const ROOM_ID = 'star-proleague-v6-room';
-        const broadChannel = new BroadcastChannel('star_scoreboard_channel');
+        // 본인만의 고정 방 이름 (필요시 뒤의 문구를 자유롭게 변경)
+        const ROOM_ID = 'star-proleague-room-jdpro';
         let peer = null;
 
         function initMatches() {
@@ -120,41 +120,28 @@
             }
         }
 
-        broadChannel.onmessage = (e) => { if(e.data) updateUI(e.data); };
-
         function initOverlayPeer() {
             if (peer) {
                 try { peer.destroy(); } catch(e){}
             }
-            // 기존 락이 걸린 방 이름 대신 새로운 고유 방 ID 부여
-            peer = new Peer(ROOM_ID + '-' + Math.floor(Math.random() * 1000));
-            
-            // 고유 ID 수신 시 로컬 저장소에 현재 수신 ID 보관
-            peer.on('open', (id) => {
-                localStorage.setItem('active_peer_id', id);
-            });
+
+            peer = new Peer(ROOM_ID);
 
             peer.on('connection', (conn) => {
                 conn.on('data', (data) => updateUI(data));
             });
 
             peer.on('error', (err) => {
-                setTimeout(initOverlayPeer, 3000);
+                if (err.type === 'unavailable-id') {
+                    // 서버에 이전 연결이 아직 남아있는 경우 3초 후 자동 재접속
+                    setTimeout(initOverlayPeer, 3000);
+                }
             });
         }
 
         window.onload = () => {
             initMatches();
             initOverlayPeer();
-            
-            const saved = localStorage.getItem('starScoreboardData_Final_V6');
-            if(saved) updateUI(JSON.parse(saved));
-
-            window.addEventListener('storage', (e) => {
-                if(e.key === 'starScoreboardData_Final_V6' && e.newValue) {
-                    try { updateUI(JSON.parse(e.newValue)); } catch(err){}
-                }
-            });
         };
     </script>
 </body>
