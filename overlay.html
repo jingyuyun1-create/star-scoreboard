@@ -129,6 +129,11 @@
 
             peer.on('connection', (conn) => {
                 conn.on('data', (data) => updateUI(data));
+                if (data.isBroadcastOn === false) {
+    document.body.style.display = 'none';
+} else {
+    document.body.style.display = 'block';
+}
             });
 
             peer.on('error', (err) => {
