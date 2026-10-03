@@ -20,7 +20,7 @@
 
         .status-bar { font-size: 11px; padding: 5px; border-radius: 4px; background: #0d0e11; color: #888; text-align: center; font-weight: bold; margin-bottom: 8px; }
         .status-online { color: #2ed573; border: 1px solid #2ed573; }
-        .status-offline { color: #ff4757; border: 1px solid #ff4757; }
+        .status-offline { color: #ff5722; border: 1px solid #ff5722; }
 
         .input-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
         input[type="text"] { background: #0f1013; border: 1px solid #3a3d4a; color: #fff; padding: 6px; border-radius: 4px; font-weight: 700; font-size: 13px; outline: none; }
@@ -58,7 +58,7 @@
     <div class="tab-menu">
         <button id="tab-btn-set1" class="tab-btn active" onclick="switchTab('set1')">1Set</button>
         <button id="tab-btn-set2" class="tab-btn" onclick="switchTab('set2')">2Set</button>
-        <button id="tab-btn-ace" class="tab-btn" onclick="switchTab('ace')">ace</button>
+        <button id="tab-btn-ace" class="tab-btn" onclick="switchTab('ace')">ACE</button>
     </div>
 
     <div class="panel">
@@ -119,8 +119,65 @@
 
     let currentTab = 'set1';
     let peer = null;
-    let conn = null;
+    let conns = { 'set1': null, 'set2': null, 'ace': null };
     let isGlowOn = true;
+
+    function initPeer() {
+        if (peer && !peer.destroyed) return;
+        
+        peer = new Peer();
+
+        peer.on('open', () => {
+            connectAllOverlays();
+        });
+
+        peer.on('error', () => {
+            updateStatus();
+            setTimeout(initPeer, 3000);
+        });
+    }
+
+    function connectAllOverlays() {
+        if (!peer || peer.destroyed) return;
+
+        ['set1', 'set2', 'ace'].forEach(tab => {
+            if (!conns[tab] || !conns[tab].open) {
+                const targetRoom = ROOM_TARGETS[tab];
+                const conn = peer.connect(targetRoom);
+
+                conn.on('open', () => {
+                    conns[tab] = conn;
+                    updateStatus();
+                    sendTabData(tab);
+                });
+
+                conn.on('close', () => {
+                    conns[tab] = null;
+                    updateStatus();
+                });
+
+                conn.on('error', () => {
+                    conns[tab] = null;
+                    updateStatus();
+                });
+            }
+        });
+    }
+
+    function updateStatus() {
+        const el = document.getElementById('status-text');
+        if (!el) return;
+
+        const isCurrentConnected = conns[currentTab] && conns[currentTab].open;
+        
+        if (isCurrentConnected) {
+            el.innerText = `[${currentTab.toUpperCase()}] 송출 화면 연동 성공 🟢`;
+            el.className = 'status-bar status-online';
+        } else {
+            el.innerText = `[${currentTab.toUpperCase()}] 송출 화면 연결 대기 중... 🟡`;
+            el.className = 'status-bar status-offline';
+        }
+    }
 
     function switchTab(tabName) {
         currentTab = tabName;
@@ -133,62 +190,9 @@
         const tabTitleMap = { 'set1': '1Set 스코어보드', 'set2': '2Set 스코어보드', 'ace': 'ACE 에이스 결정전' };
         document.getElementById('console-header-title').innerText = `${tabTitleMap[tabName]} 제어`;
 
-        // 세트 카드 재구성 (ACE전은 1세트만 생성)
         renderMatches();
-        
-        // 해당 탭 저장 데이터 불러오기
         loadSavedData();
-
-        // 수신기 연동 재연결
-        initPeer();
-    }
-
-    function initPeer() {
-        if (conn) {
-            try { conn.close(); } catch(e){}
-        }
-        if (peer) {
-            try { peer.destroy(); } catch(e){}
-        }
-
-        peer = new Peer();
-
-        peer.on('open', () => {
-            connectToOverlay();
-        });
-
-        peer.on('error', () => {
-            updateStatus(false, '서버 연동 실패 (재시도 중...) 🟡');
-            setTimeout(initPeer, 3000);
-        });
-    }
-
-    function connectToOverlay() {
-        if (!peer || peer.destroyed) return;
-        
-        const targetRoom = ROOM_TARGETS[currentTab];
-        conn = peer.connect(targetRoom);
-
-        conn.on('open', () => {
-            updateStatus(true, `[${currentTab.toUpperCase()}] 송출 화면 연동 성공 🟢`);
-            saveAndSend();
-        });
-
-        conn.on('close', () => {
-            updateStatus(false, `[${currentTab.toUpperCase()}] 송출 화면 연결 끊김 🔴`);
-        });
-
-        conn.on('error', () => {
-            updateStatus(false, `[${currentTab.toUpperCase()}] 송출 화면 찾는 중... 🟡`);
-        });
-    }
-
-    function updateStatus(isOnline, text) {
-        const el = document.getElementById('status-text');
-        if (el) {
-            el.innerText = text;
-            el.className = `status-bar ${isOnline ? 'status-online' : 'status-offline'}`;
-        }
+        updateStatus();
     }
 
     function renderMatches() {
@@ -196,7 +200,6 @@
         if (!container) return;
         container.innerHTML = '';
 
-        // ACE 탭은 1경기만, 1Set/2Set 탭은 9경기 생성
         const totalMatches = currentTab === 'ace' ? 1 : 9;
 
         for(let i = 1; i <= totalMatches; i++) {
@@ -347,7 +350,6 @@
         const storageKey = `star_proleague_saved_data_${currentTab}`;
         const savedRaw = localStorage.getItem(storageKey);
         
-        // 초기 기본값 세팅
         document.getElementById('league-title').value = currentTab === 'ace' ? "에이스 결정전" : `${currentTab.toUpperCase()} 매치`;
         document.getElementById('team-l').value = "A팀";
         document.getElementById('team-r').value = "B팀";
@@ -412,7 +414,7 @@
         }
     }
 
-    function saveAndSend() {
+    function collectCurrentTabData() {
         const totalMatches = currentTab === 'ace' ? 1 : 9;
         const matches = [];
 
@@ -450,7 +452,7 @@
             });
         }
 
-        const data = {
+        return {
             leagueTitle: document.getElementById('league-title').value,
             teamL: document.getElementById('team-l').value,
             teamR: document.getElementById('team-r').value,
@@ -459,23 +461,34 @@
             isGlowOn: isGlowOn,
             matches: matches
         };
+    }
 
-        // 현재 탭 전용 저장소에 저장
+    function saveAndSend() {
+        const data = collectCurrentTabData();
         localStorage.setItem(`star_proleague_saved_data_${currentTab}`, JSON.stringify(data));
 
-        if(conn && conn.open) {
-            conn.send(data);
+        if(conns[currentTab] && conns[currentTab].open) {
+            conns[currentTab].send(data);
+        }
+    }
+
+    function sendTabData(tabName) {
+        const savedRaw = localStorage.getItem(`star_proleague_saved_data_${tabName}`);
+        if (savedRaw && conns[tabName] && conns[tabName].open) {
+            try {
+                conns[tabName].send(JSON.parse(savedRaw));
+            } catch(e){}
         }
     }
 
     window.onload = () => {
-        switchTab('set1');
+        renderMatches();
+        loadSavedData();
+        initPeer();
     };
 
     setInterval(() => {
-        if (!conn || !conn.open) {
-            connectToOverlay();
-        }
+        connectAllOverlays();
     }, 3000);
 </script>
 </body>
