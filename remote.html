@@ -7,7 +7,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@700;900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
-        body { background: #121316; color: #e0e0e0; padding: 12px; width: 440px; user-select: none; }
+        body { background: #121316; color: #e0e0e0; padding: 12px; width: 460px; user-select: none; }
 
         .panel { background: #1a1b20; border: 1px solid #2e3038; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
         .panel-title { font-size: 13px; font-weight: 900; color: #ff4757; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
@@ -30,20 +30,20 @@
         .btn-reset { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid #ff4757; margin-left: 3px; }
         .btn-reset:hover { background: #ff4757; color: #fff; }
 
-        .match-card { background: #0f1013; border: 1px solid #282a36; border-radius: 6px; padding: 6px; margin-bottom: 5px; transition: border-color 0.2s; }
+        .match-card { background: #0f1013; border: 1px solid #282a36; border-radius: 6px; padding: 8px 6px; margin-bottom: 5px; transition: border-color 0.2s; }
         .match-card.active-set { border-color: #ffffff; background: #161820; }
         .match-card.hidden-set { opacity: 0.4; }
 
         .match-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 11px; color: #888; }
         .set-title { font-weight: 900; color: #fff; display: flex; align-items: center; gap: 4px; }
 
-        .player-row { display: flex; gap: 4px; align-items: center; justify-content: space-between; }
-        .race-select { background: #1a1b20; border: 1px solid #3a3d4a; color: #fff; font-size: 11px; padding: 4px 2px; border-radius: 3px; cursor: pointer; font-weight: 900; width: 68px; }
-        .btn-win { background: #222; border: 1px solid #444; color: #aaa; padding: 4px 5px; font-size: 11px; border-radius: 3px; cursor: pointer; white-space: nowrap; }
+        .player-row { display: flex; gap: 3px; align-items: center; justify-content: space-between; }
+        .race-select { background: #1a1b20; border: 1px solid #3a3d4a; color: #fff; font-size: 11px; padding: 4px 1px; border-radius: 3px; cursor: pointer; font-weight: 900; width: 68px; flex-shrink: 0; }
+        .btn-win { background: #222; border: 1px solid #444; color: #aaa; padding: 4px 4px; font-size: 11px; border-radius: 3px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
         .btn-win.winner { background: #ff4757; color: #fff; border-color: #ff4757; }
         
-        .p-input { width: 60px; text-align: center; }
-        .map-input { width: 65px; text-align: center; }
+        .p-input { width: 56px; text-align: center; flex-shrink: 0; }
+        .map-input { width: 58px; text-align: center; flex-shrink: 0; }
     </style>
 </head>
 <body>
@@ -64,7 +64,7 @@
         </div>
 
         <div class="input-row" style="justify-content: space-between;">
-            <input type="text" id="team-l" value="JD팀" style="width: 110px; text-align: right;" oninput="saveAndSend()">
+            <input type="text" id="team-l" value="JD팀" style="width: 120px; text-align: right;" oninput="saveAndSend()">
             
             <div class="score-box">
                 <button class="btn-score" onclick="changeScore('left', -1)">-</button>
@@ -80,7 +80,7 @@
                 <button class="btn-score" onclick="changeScore('right', 1)">+</button>
             </div>
 
-            <input type="text" id="team-r" value="적팀" style="width: 110px;" oninput="saveAndSend()">
+            <input type="text" id="team-r" value="적팀" style="width: 120px;" oninput="saveAndSend()">
         </div>
 
         <div class="input-row" style="margin-top: 8px; justify-content: space-between;">
