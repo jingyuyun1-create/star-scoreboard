@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>프로리그 스코어보드 콘솔</title>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@700;900&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
+        body { background: #121316; color: #e0e0e0; padding: 15px; width: 480px; user-select: none; }
+
+        .panel { background: #1a1b20; border: 1px solid #2e3038; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+        .panel-title { font-size: 13px; font-weight: 900; color: #ff4757; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+        .status-bar { font-size: 11px; padding: 5px; border-radius: 4px; background: #0d0e11; color: #888; text-align: center; font-weight: bold; margin-bottom: 8px; }
+        .status-online { color: #2ed573; border: 1px solid #2ed573; }
+        .status-offline { color: #ff4757; border: 1px solid #ff4757; }
+
+        .input-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+        input[type="text"] { background: #0f1013; border: 1px solid #3a3d4a; color: #fff; padding: 6px 8px; border-radius: 4px; font-weight: 700; font-size: 13px; outline: none; }
+        input[type="text"]:focus { border-color: #ff4757; }
+        
+        .score-box { display: flex; align-items: center; gap: 4px; background: #0f1013; padding: 2px 6px; border-radius: 4px; border: 1px solid #3a3d4a; }
+        .score-val { width: 25px; text-align: center; font-size: 16px; font-weight: 900; color: #ff4757; }
+        .btn-score { background: #2f3542; color: #fff; border: none; width: 22px; height: 22px; border-radius: 3px; cursor: pointer; font-weight: 900; }
+        .btn-score:hover { background: #ff4757; }
+
+        .btn-action { background: #2f3542; color: #fff; border: none; padding: 6px 10px; font-size: 11px; font-weight: 900; border-radius: 4px; cursor: pointer; }
+        .btn-action.active { background: #ff4757; }
+        .btn-reset { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid #ff4757; }
+        .btn-reset:hover { background: #ff4757; color: #fff; }
+
+        .match-card { background: #0f1013; border: 1px solid #282a36; border-radius: 6px; padding: 6px; margin-bottom: 6px; transition: border-color 0.2s; }
+        .match-card.active-set { border-color: #ffffff; background: #161820; }
+        .match-card.hidden-set { opacity: 0.4; }
+
+        .match-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 11px; color: #888; }
+        .set-title { font-weight: 900; color: #fff; display: flex; align-items: center; gap: 6px; }
+
+        .player-row { display: flex; gap: 4px; align-items: center; }
+        .race-select { background: #1a1b20; border: 1px solid #3a3d4a; color: #fff; font-size: 11px; padding: 4px; border-radius: 3px; cursor: pointer; font-weight: 900; }
+        .btn-win { background: #222; border: 1px solid #444; color: #aaa; padding: 4px 6px; font-size: 11px; border-radius: 3px; cursor: pointer; }
+        .btn-win.winner { background: #ff4757; color: #fff; border-color: #ff4757; }
+    </style>
+</head>
+<body>
+
+    <div class="panel">
+        <div class="panel-title">
+            <span>스타 프로리그 제어 콘솔</span>
+            <button class="btn-action btn-reset" onclick="resetOnlyScores()">🔄 점수 리셋</button>
+        </div>
+        
+        <div id="status-text" class="status-bar status-offline">송출 화면 연동 중... 🟡</div>
+
+        <div class="input-row">
+            <input type="text" id="league-title" value="프로리그 9전" placeholder="대회명" style="width: 100%;" oninput="saveAndSend()">
+        </div>
+
+        <div class="input-row" style="justify-content: space-between;">
+            <input type="text" id="team-l" value="JD팀" style="width: 120px; text-align: right;" oninput="saveAndSend()">
+            
+            <div class="score-box">
+                <button class="btn-score" onclick="changeScore('left', -1)">-</button>
+                <span id="score-l" class="score-val">0</span>
+                <button class="btn-score" onclick="changeScore('left', 1)">+</button>
+            </div>
+            
+            <span style="font-weight: 900; color: #555;">:</span>
+
+            <div class="score-box">
+                <button class="btn-score" onclick="changeScore('right', -1)">-</button>
+                <span id="score-r" class="score-val">0</span>
+                <button class="btn-score" onclick="changeScore('right', 1)">+</button>
+            </div>
+
+            <input type="text" id="team-r" value="적팀" style="width: 120px;" oninput="saveAndSend()">
+        </div>
+
+        <div class="input-row" style="margin-top: 10px; justify-content: space-between;">
+            <button id="btn-glow" class="btn-action active" onclick="toggleGlow()">불빛 끄기 OFF</button>
+            <div>
+                <button class="btn-action" onclick="hideLastMatch()">경기 숨기기 ↩</button>
+                <button class="btn-action" onclick="showNextMatch()">다음 경기 공개 👁</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">매치업 세트 목록 (1~9세트)</div>
+        <div id="matches-container"></div>
+    </div>
+
+<script>
+    // overlay.html의 ROOM_ID와 완전히 동일하게 지정
+    const TARGET_ID = 'star-proleague-room-jdpro';
+    let peer = null;
+    let conn = null;
+    let isGlowOn = true;
+
+    function initPeer() {
+        if (peer) {
+            try { peer.destroy(); } catch(e){}
+        }
+        peer = new Peer();
+
+        peer.on('open', () => {
+            connectToOverlay();
+        });
+
+        peer.on('error', () => {
+            updateStatus(false, '서버 연결 재시도 중... 🟡');
+            setTimeout(initPeer, 3000);
+        });
+    }
+
+    function connectToOverlay() {
+        if (!peer || peer.destroyed) return;
+        
+        conn = peer.connect(TARGET_ID);
+
+        conn.on('open', () => {
+            updateStatus(true, '송출 화면 연동 성공 🟢');
+            saveAndSend();
+        });
+
+        conn.on('close', () => {
+            updateStatus(false, '송출 화면 연결 끊김 (재연결 시도 중...) 🔴');
+        });
+
+        conn.on('error', () => {
+            updateStatus(false, '송출 화면 찾는 중... 🟡');
+        });
+    }
+
+    function updateStatus(isOnline, text) {
+        const el = document.getElementById('status-text');
+        if (el) {
+            el.innerText = text;
+            el.className = `status-bar ${isOnline ? 'status-online' : 'status-offline'}`;
+        }
+    }
+
+    function renderMatches() {
+        const container = document.getElementById('matches-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        for(let i = 1; i <= 9; i++) {
+            const card = document.createElement('div');
+            card.className = `match-card ${i===1?'active-set':''}`;
+            card.id = `card-${i}`;
+            card.innerHTML = `
+                <div class="match-header">
+                    <span class="set-title">
+                        <input type="radio" name="active-set" value="${i}" ${i===1?'checked':''} onchange="setActiveSet(${i})">
+                        ${i}세트 경기
+                    </span>
+                    <label style="cursor:pointer;">
+                        <input type="checkbox" id="vis-${i}" ${i===1?'checked':''} onchange="saveAndSend()"> 화면 표시
+                    </label>
+                </div>
+                <div class="player-row">
+                    <select id="race-l-${i}" class="race-select" onchange="saveAndSend()">
+                        <option value="color-default">선택안함</option>
+                        <option value="color-terran">테란(T)</option>
+                        <option value="color-zerg">저그(Z)</option>
+                        <option value="color-protoss">프로토스(P)</option>
+                    </select>
+                    <input type="text" id="p-l-${i}" value="선수A" style="flex:1;" oninput="saveAndSend()">
+                    <button id="win-l-${i}" class="btn-win" onclick="setWinner(${i}, 'left')">🏆 승</button>
+                    
+                    <input type="text" id="map-${i}" value="맵이름" style="width:70px; text-align:center;" oninput="saveAndSend()">
+                    
+                    <button id="win-r-${i}" class="btn-win" onclick="setWinner(${i}, 'right')">🏆 승</button>
+                    <input type="text" id="p-r-${i}" value="선수B" style="flex:1; text-align:right;" oninput="saveAndSend()">
+                    <select id="race-r-${i}" class="race-select" onchange="saveAndSend()">
+                        <option value="color-default">선택안함</option>
+                        <option value="color-terran">테란(T)</option>
+                        <option value="color-zerg">저그(Z)</option>
+                        <option value="color-protoss">프로토스(P)</option>
+                    </select>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+    }
+
+    function setActiveSet(setNum) {
+        for(let i=1; i<=9; i++) {
+            const card = document.getElementById(`card-${i}`);
+            if(card) {
+                if(i === setNum) card.classList.add('active-set');
+                else card.classList.remove('active-set');
+            }
+        }
+        saveAndSend();
+    }
+
+    function setWinner(setNum, pos) {
+        const winL = document.getElementById(`win-l-${setNum}`);
+        const winR = document.getElementById(`win-r-${setNum}`);
+        const scoreL = document.getElementById('score-l');
+        const scoreR = document.getElementById('score-r');
+
+        const wasLeftWinner = winL.classList.contains('winner');
+        const wasRightWinner = winR.classList.contains('winner');
+
+        winL.classList.remove('winner');
+        winR.classList.remove('winner');
+
+        if(pos === 'left') {
+            if(!wasLeftWinner) {
+                winL.classList.add('winner');
+                scoreL.innerText = parseInt(scoreL.innerText) + 1;
+                if(wasRightWinner) scoreR.innerText = Math.max(0, parseInt(scoreR.innerText) - 1);
+            } else {
+                scoreL.innerText = Math.max(0, parseInt(scoreL.innerText) - 1);
+            }
+        } else {
+            if(!wasRightWinner) {
+                winR.classList.add('winner');
+                scoreR.innerText = parseInt(scoreR.innerText) + 1;
+                if(wasLeftWinner) scoreL.innerText = Math.max(0, parseInt(scoreL.innerText) - 1);
+            } else {
+                scoreR.innerText = Math.max(0, parseInt(scoreR.innerText) - 1);
+            }
+        }
+        saveAndSend();
+    }
+
+    function changeScore(t, val) {
+        const el = document.getElementById(t === 'left' ? 'score-l' : 'score-r');
+        el.innerText = Math.max(0, parseInt(el.innerText) + val);
+        saveAndSend();
+    }
+
+    function toggleGlow() {
+        isGlowOn = !isGlowOn;
+        const btn = document.getElementById('btn-glow');
+        if (btn) {
+            btn.innerText = isGlowOn ? "불빛 끄기 OFF" : "불빛 켜기 ON";
+            btn.className = `btn-action ${isGlowOn ? 'active' : ''}`;
+        }
+        saveAndSend();
+    }
+
+    function showNextMatch() {
+        for(let i=1; i<=9; i++) {
+            const chk = document.getElementById(`vis-${i}`);
+            if(chk && !chk.checked) {
+                chk.checked = true;
+                break;
+            }
+        }
+        saveAndSend();
+    }
+
+    function hideLastMatch() {
+        for(let i=9; i>=1; i--) {
+            const chk = document.getElementById(`vis-${i}`);
+            if(chk && chk.checked && i > 1) {
+                chk.checked = false;
+                break;
+            }
+        }
+        saveAndSend();
+    }
+
+    function resetOnlyScores() {
+        if(!confirm("점수와 승패 기록을 초기화할까요?")) return;
+        document.getElementById('score-l').innerText = "0";
+        document.getElementById('score-r').innerText = "0";
+        for(let i=1; i<=9; i++) {
+            const winL = document.getElementById(`win-l-${i}`);
+            const winR = document.getElementById(`win-r-${i}`);
+            if(winL) winL.classList.remove('winner');
+            if(winR) winR.classList.remove('winner');
+        }
+        saveAndSend();
+    }
+
+    function saveAndSend() {
+        const matches = [];
+
+        for(let i=1; i<=9; i++) {
+            const visChk = document.getElementById(`vis-${i}`);
+            const isVis = visChk ? visChk.checked : true;
+            const activeRadios = document.querySelectorAll(`input[name="active-set"]`);
+            const isAct = activeRadios[i-1] ? activeRadios[i-1].checked : false;
+            
+            const card = document.getElementById(`card-${i}`);
+            if (card) {
+                card.className = `match-card ${isAct?'active-set':''} ${!isVis?'hidden-set':''}`;
+            }
+
+            const winL = document.getElementById(`win-l-${i}`);
+            const winR = document.getElementById(`win-r-${i}`);
+            const isWinL = winL ? winL.classList.contains('winner') : false;
+            const isWinR = winR ? winR.classList.contains('winner') : false;
+
+            const pL = document.getElementById(`p-l-${i}`);
+            const pR = document.getElementById(`p-r-${i}`);
+            const map = document.getElementById(`map-${i}`);
+            const raceL = document.getElementById(`race-l-${i}`);
+            const raceR = document.getElementById(`race-r-${i}`);
+
+            matches.push({
+                visible: isVis,
+                active: isAct,
+                playerL: pL ? (pL.value || " ") : " ",
+                playerR: pR ? (pR.value || " ") : " ",
+                map: map ? (map.value || " ") : " ",
+                raceL: raceL ? raceL.value : 'color-default',
+                raceR: raceR ? raceR.value : 'color-default',
+                winner: isWinL ? 'left' : (isWinR ? 'right' : 'none')
+            });
+        }
+
+        const data = {
+            leagueTitle: document.getElementById('league-title').value,
+            teamL: document.getElementById('team-l').value,
+            teamR: document.getElementById('team-r').value,
+            scoreL: document.getElementById('score-l').innerText,
+            scoreR: document.getElementById('score-r').innerText,
+            isGlowOn: isGlowOn,
+            matches: matches
+        };
+
+        if(conn && conn.open) {
+            conn.send(data);
+        }
+    }
+
+    window.onload = () => {
+        renderMatches();
+        initPeer();
+    };
+
+    // 3초마다 연결 체크 및 주기적 재연결
+    setInterval(() => {
+        if (!conn || !conn.open) {
+            connectToOverlay();
+        }
+    }, 3000);
+</script>
+</body>
+</html>
