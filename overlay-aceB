@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>슈퍼 에이스 결정전 Overlay</title>
+    <!-- PeerJS 실시간 연동 라이브러리 -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@800;900&display=swap');
+        
+        /* 박스 크기 계산 오류 방지 및 기본 설정 */
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 10px; background: transparent; font-family: 'Pretendard', sans-serif; user-select: none; overflow: hidden; }
+        
+        .ace-container { width: 300px; transition: opacity 0.3s ease; }
+        .match-row { display: flex; align-items: center; gap: 5px; width: 100%; }
+        
+        /* 고정 크기로 변경하여 레이아웃 무너짐 방지 */
+        .match-num { width: 40px; flex-shrink: 0; }
+        .match-num span { background: #ff4757; color: white; display: block; width: 100%; height: 30px; line-height: 31px; text-align: center; border-radius: 4px; font-size: 11px; font-weight: 900; }
+        
+        @keyframes pulseGlow { 
+            0%, 100% { border-color: #ff4757; box-shadow: 0 0 5px rgba(255, 71, 87, 0.3); } 
+            50% { border-color: #ffffff; box-shadow: 0 0 15px rgba(255, 255, 255, 0.5); } 
+        }
+        
+        /* 가변 크기로 유연하게 작동 */
+        .match-content-box { 
+            display: flex; align-items: center; flex-grow: 1; background: rgba(12, 12, 12, 0.9); 
+            border: 2px solid #ff4757; border-radius: 5px; padding: 3px 0;
+            animation: pulseGlow 2.5s infinite ease-in-out;
+            transition: all 0.3s;
+        }
+
+        /* 불빛 OFF 옵션용 스타일 */
+        .match-content-box.glow-off {
+            animation: none !important;
+            border-color: #ff4757 !important;
+            box-shadow: none !important;
+        }
+        
+        .player-wrapper { width: 38%; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+        .player-left, .player-right { width: 100%; text-align: center; color: #e0e0e0; font-size: 19px; cursor: pointer; white-space: nowrap; overflow: hidden; font-weight: 900; min-height: 24px; transition: color 0.2s; }
+        
+        .map-name { width: 24%; text-align: center; color: #b0b0b0; font-size: 13px; font-weight: 900; cursor: pointer; white-space: nowrap; overflow: hidden; }
+        
+        /* 종족별 색상 클래스 */
+        .color-default { color: #e0e0e0 !important; } 
+        .color-terran  { color: #528ae2 !important; } 
+        .color-zerg    { color: #de4343 !important; } 
+        .color-protoss { color: #dfb121 !important; }
+
+        /* 승자 강조 효과 (승리 버튼 클릭 시) */
+        .winner-effect {
+            text-shadow: 0 0 10px #ffea00, 0 0 20px #ffea00;
+        }
+    </style>
+</head>
+<body>
+
+<div id="ace-container" class="ace-container">
+    <div class="match-row">
+        <div class="match-num"><span>ACE</span></div>
+        <div id="content-box" class="match-content-box">
+            <div class="player-wrapper">
+                <div id="p-left" class="player-left color-default" onclick="edit(this)" oncontextmenu="changeRace(this, event)">ACE</div>
+            </div>
+            <div id="map-name" class="map-name" onclick="edit(this)">결정전</div>
+            <div class="player-wrapper">
+                <div id="p-right" class="player-right color-default" onclick="edit(this)" oncontextmenu="changeRace(this, event)">ACE</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const MY_ROOM_ID = 'star-proleague-room-ace';
+    const STORAGE_KEY = 'starAceMatchData';
+    const colors = ['color-default', 'color-terran', 'color-zerg', 'color-protoss'];
+
+    let peer = null;
+
+    // 1. PeerJS 수신부 (리모컨 통신 연동)
+    function initPeer() {
+        if (peer && !peer.destroyed) return;
+
+        peer = new Peer(MY_ROOM_ID);
+
+        peer.on('open', (id) => {
+            console.log('[ACE Overlay] 연동 준비 완료. ID:', id);
+        });
+
+        peer.on('connection', (conn) => {
+            conn.on('data', (data) => {
+                applyRemoteData(data);
+            });
+        });
+
+        peer.on('error', (err) => {
+            console.warn('[ACE Overlay] 연결 재시도 중...', err);
+            setTimeout(initPeer, 3000);
+        });
+    }
+
+    // 2. 리모컨에서 전달받은 데이터 화면에 반영
+    function applyRemoteData(data) {
+        if (!data) return;
+
+        const container = document.getElementById('ace-container');
+        const box = document.getElementById('content-box');
+        const pLeft = document.getElementById('p-left');
+        const pRight = document.getElementById('p-right');
+        const mapName = document.getElementById('map-name');
+
+        // 테두리 불빛(Glow) 효과 설정
+        if (data.isGlowOn !== undefined) {
+            if (data.isGlowOn) {
+                box.classList.remove('glow-off');
+            } else {
+                box.classList.add('glow-off');
+            }
+        }
+
+        if (data.matches && data.matches.length > 0) {
+            const m = data.matches[0];
+
+            // 화면 표시 / 숨기기
+            container.style.display = m.visible ? 'block' : 'none';
+
+            // 선수 및 맵 이름 업데이트
+            pLeft.innerText = m.playerL || "";
+            pRight.innerText = m.playerR || "";
+            mapName.innerText = m.map || "";
+
+            // 종족 색상 클래스 적용
+            pLeft.className = `player-left ${m.raceL || 'color-default'}`;
+            pRight.className = `player-right ${m.raceR || 'color-default'}`;
+
+            // 승자 강조 효과
+            pLeft.classList.remove('winner-effect');
+            pRight.classList.remove('winner-effect');
+
+            if (m.winner === 'left') {
+                pLeft.classList.add('winner-effect');
+            } else if (m.winner === 'right') {
+                pRight.classList.add('winner-effect');
+            }
+
+            saveData();
+        }
+    }
+
+    // 3. 로컬 저장 및 직접 수정 로직 (독립 사용 가능)
+    function saveData() {
+        const data = {
+            pLeft: document.getElementById('p-left').innerText,
+            pRight: document.getElementById('p-right').innerText,
+            map: document.getElementById('map-name').innerText,
+            raceL: document.getElementById('p-left').className,
+            raceR: document.getElementById('p-right').className
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadData() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return;
+        
+        try {
+            const data = JSON.parse(raw);
+            if(data.pLeft !== undefined) document.getElementById('p-left').innerText = data.pLeft;
+            if(data.pRight !== undefined) document.getElementById('p-right').innerText = data.pRight;
+            if(data.map !== undefined) document.getElementById('map-name').innerText = data.map;
+            
+            if (data.raceL && data.raceL.includes('player-left')) {
+                document.getElementById('p-left').className = data.raceL;
+            }
+            
+            if (data.raceR && data.raceR.includes('player-right')) {
+                document.getElementById('p-right').className = data.raceR;
+            }
+        } catch(e) {
+            console.error("데이터 로드 중 오류 발생:", e);
+        }
+    }
+
+    function edit(el) {
+        if(el.querySelector('input')) return;
+        const val = el.innerText;
+        el.innerHTML = `<input type="text" value="${val}" style="width:90%; background:transparent; border:none; color:white; font-weight:bold; text-align:center; font-family:inherit; font-size:inherit; outline:none;">`;
+        const input = el.querySelector('input');
+        input.focus();
+        input.select();
+        
+        input.onblur = () => { 
+            el.innerText = input.value.trim(); 
+            saveData(); 
+        };
+        input.onkeydown = (e) => { if(e.key==='Enter') input.blur(); };
+    }
+    
+    function changeRace(el, e) {
+        e.preventDefault();
+        let idx = colors.findIndex(c => el.classList.contains(c));
+        if(idx === -1) idx = 0;
+        idx = (idx + 1) % colors.length;
+        el.className = `player-${el.id === 'p-left' ? 'left' : 'right'} ${colors[idx]}`;
+        saveData();
+    }
+
+    window.onload = () => {
+        loadData();
+        initPeer();
+    };
+</script>
+
+</body>
+</html>
