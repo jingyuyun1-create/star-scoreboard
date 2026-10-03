@@ -80,11 +80,11 @@
 
         <!-- ACE 탭 선택 시 숨겨지는 영역 -->
         <div id="league-title-section" class="input-row">
-            <input type="text" id="league-title" value="프로리그 대전" placeholder="대회명" style="width: 100%;" oninput="saveAndSend()">
+            <input type="text" id="league-title" value="" placeholder="" style="width: 100%;" oninput="saveAndSend()">
         </div>
 
         <div id="team-score-section" class="input-row" style="justify-content: space-between;">
-            <input type="text" id="team-l" value="A팀" style="width: 120px; text-align: right;" oninput="saveAndSend()">
+            <input type="text" id="team-l" value="" placeholder="" style="width: 120px; text-align: right;" oninput="saveAndSend()">
             
             <div class="score-box">
                 <button class="btn-score" onclick="changeScore('left', -1)">-</button>
@@ -100,7 +100,7 @@
                 <button class="btn-score" onclick="changeScore('right', 1)">+</button>
             </div>
 
-            <input type="text" id="team-r" value="B팀" style="width: 120px;" oninput="saveAndSend()">
+            <input type="text" id="team-r" value="" placeholder="" style="width: 120px;" oninput="saveAndSend()">
         </div>
 
         <div class="input-row" style="margin-top: 8px; justify-content: space-between;">
@@ -247,13 +247,13 @@
                         <option value="color-terran">테란</option>
                         <option value="color-protoss">토스</option>
                     </select>
-                    <input type="text" id="p-l-${i}" class="p-input" value="" placeholder="선수A" oninput="saveAndSend()">
+                    <input type="text" id="p-l-${i}" class="p-input" value="" placeholder="" oninput="saveAndSend()">
                     <button id="win-l-${i}" class="btn-win" onclick="setWinner(${i}, 'left')">🏆 승</button>
                     
-                    <input type="text" id="map-${i}" class="map-input" value="" placeholder="맵이름" oninput="saveAndSend()">
+                    <input type="text" id="map-${i}" class="map-input" value="" placeholder="" oninput="saveAndSend()">
                     
                     <button id="win-r-${i}" class="btn-win" onclick="setWinner(${i}, 'right')">🏆 승</button>
-                    <input type="text" id="p-r-${i}" class="p-input" value="" placeholder="선수B" oninput="saveAndSend()">
+                    <input type="text" id="p-r-${i}" class="p-input" value="" placeholder="" oninput="saveAndSend()">
                     <select id="race-r-${i}" class="race-select" onchange="saveAndSend()">
                         <option value="color-default">선택안함</option>
                         <option value="color-zerg">저그</option>
@@ -386,13 +386,33 @@
         const scoreL = document.getElementById('score-l');
         const scoreR = document.getElementById('score-r');
 
-        if (leagueInput) leagueInput.value = currentTab === 'ace' ? "에이스 결정전" : `${currentTab.toUpperCase()} 매치`;
-        if (teamLInput) teamLInput.value = "A팀";
-        if (teamRInput) teamRInput.value = "B팀";
+        // 기본값 세팅을 전부 완전한 빈 칸("")으로 수정
+        if (leagueInput) leagueInput.value = "";
+        if (teamLInput) teamLInput.value = "";
+        if (teamRInput) teamRInput.value = "";
         if (scoreL) scoreL.innerText = "0";
         if (scoreR) scoreR.innerText = "0";
 
+        const totalMatches = currentTab === 'ace' ? 1 : 9;
+
         if (!savedRaw) {
+            for(let i=1; i<=totalMatches; i++) {
+                const pL = document.getElementById(`p-l-${i}`);
+                const pR = document.getElementById(`p-r-${i}`);
+                const map = document.getElementById(`map-${i}`);
+                const raceL = document.getElementById(`race-l-${i}`);
+                const raceR = document.getElementById(`race-r-${i}`);
+                const winL = document.getElementById(`win-l-${i}`);
+                const winR = document.getElementById(`win-r-${i}`);
+
+                if (pL) pL.value = "";
+                if (pR) pR.value = "";
+                if (map) map.value = "";
+                if (raceL) raceL.value = "color-default";
+                if (raceR) raceR.value = "color-default";
+                if (winL) winL.classList.remove('winner');
+                if (winR) winR.classList.remove('winner');
+            }
             isLoading = false;
             return;
         }
@@ -400,9 +420,9 @@
         try {
             const data = JSON.parse(savedRaw);
 
-            if (data.leagueTitle && leagueInput) leagueInput.value = data.leagueTitle;
-            if (data.teamL && teamLInput) teamLInput.value = data.teamL;
-            if (data.teamR && teamRInput) teamRInput.value = data.teamR;
+            if (data.leagueTitle !== undefined && leagueInput) leagueInput.value = data.leagueTitle;
+            if (data.teamL !== undefined && teamLInput) teamLInput.value = data.teamL;
+            if (data.teamR !== undefined && teamRInput) teamRInput.value = data.teamR;
             if (data.scoreL !== undefined && scoreL) scoreL.innerText = data.scoreL;
             if (data.scoreR !== undefined && scoreR) scoreR.innerText = data.scoreR;
 
@@ -416,8 +436,8 @@
             }
 
             if (data.matches && data.matches.length > 0) {
-                const totalMatches = currentTab === 'ace' ? 1 : data.matches.length;
-                for(let idx = 0; idx < totalMatches; idx++) {
+                const count = currentTab === 'ace' ? 1 : data.matches.length;
+                for(let idx = 0; idx < count; idx++) {
                     const m = data.matches[idx];
                     if (!m) continue;
                     const i = idx + 1;
