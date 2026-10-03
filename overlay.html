@@ -128,17 +128,8 @@
             peer = new Peer(ROOM_ID);
 
             peer.on('connection', (conn) => {
-                conn.on('data', (data) => {
-    // 1. 방송 송출 ON/OFF 처리
-    if (data.isBroadcastOn === false) {
-        document.body.style.display = 'none'; // 송출 화면 전체 숨김
-    } else {
-        document.body.style.display = 'block'; // 송출 화면 다시 표시
-    }
-
-    // 2. 기존 스코어보드 업데이트 함수 호출...
-    // updateScoreboard(data); 
-});
+                conn.on('data', (data) => updateUI(data));
+            });
 
             peer.on('error', (err) => {
                 if (err.type === 'unavailable-id') {
