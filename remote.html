@@ -7,69 +7,70 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@700;900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
-        body { background: #121316; color: #e0e0e0; padding: 12px; width: 460px; user-select: none; }
+        body { background: #121316; color: #e0e0e0; padding: 6px; width: 460px; user-select: none; }
 
         /* 상단 메인 탭 */
-        .tab-menu { display: flex; gap: 6px; margin-bottom: 10px; }
-        .tab-btn { flex: 1; padding: 10px 0; background: #22242b; border: 1px solid #3a3d4a; color: #888; font-weight: 900; font-size: 14px; border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .tab-menu { display: flex; gap: 4px; margin-bottom: 5px; }
+        .tab-btn { flex: 1; padding: 6px 0; background: #22242b; border: 1px solid #3a3d4a; color: #888; font-weight: 900; font-size: 13px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.2s; }
         .tab-btn:hover { background: #2a2d37; color: #fff; }
-        .tab-btn.active { background: #ff5722; color: #fff; border-color: #ff5722; box-shadow: 0 0 10px rgba(255, 87, 34, 0.4); }
+        .tab-btn.active { background: #ff5722; color: #fff; border-color: #ff5722; box-shadow: 0 0 8px rgba(255, 87, 34, 0.4); }
 
         /* ACE 버튼 특별 강조 스타일 */
         .tab-btn-ace { border-color: #ff0055; color: #ff0055; }
         .tab-btn-ace:hover { background: rgba(255, 0, 85, 0.15); color: #fff; }
-        .tab-btn-ace.active { background: linear-gradient(135deg, #ff0055, #ff5722) !important; color: #fff !important; border-color: #ff0055 !important; box-shadow: 0 0 15px rgba(255, 0, 85, 0.7) !important; }
+        .tab-btn-ace.active { background: linear-gradient(135deg, #ff0055, #ff5722) !important; color: #fff !important; border-color: #ff0055 !important; box-shadow: 0 0 10px rgba(255, 0, 85, 0.7) !important; }
 
-        .panel { background: #1a1b20; border: 1px solid #2e3038; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
-        .panel-title { font-size: 13px; font-weight: 900; color: #ff5722; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .panel { background: #1a1b20; border: 1px solid #2e3038; border-radius: 6px; padding: 6px; margin-bottom: 5px; }
+        .panel-title { font-size: 12px; font-weight: 900; color: #ff5722; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
 
-        .input-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
-        input[type="text"] { background: #0f1013; border: 1px solid #3a3d4a; color: #fff; padding: 6px; border-radius: 4px; font-weight: 700; font-size: 13px; outline: none; }
+        .input-row { display: flex; gap: 4px; margin-bottom: 4px; align-items: center; }
+        input[type="text"] { background: #0f1013; border: 1px solid #3a3d4a; color: #fff; padding: 3px 5px; border-radius: 4px; font-weight: 700; font-size: 12px; outline: none; height: 24px; }
         input[type="text"]:focus { border-color: #ff5722; }
         
-        .score-box { display: flex; align-items: center; gap: 4px; background: #0f1013; padding: 2px 6px; border-radius: 4px; border: 1px solid #3a3d4a; }
-        .score-val { width: 22px; text-align: center; font-size: 16px; font-weight: 900; color: #ff5722; }
-        .btn-score { background: #2f3542; color: #fff; border: none; width: 20px; height: 20px; border-radius: 3px; cursor: pointer; font-weight: 900; }
+        .score-box { display: flex; align-items: center; gap: 3px; background: #0f1013; padding: 1px 4px; border-radius: 4px; border: 1px solid #3a3d4a; height: 24px; }
+        .score-val { width: 18px; text-align: center; font-size: 14px; font-weight: 900; color: #ff5722; }
+        .btn-score { background: #2f3542; color: #fff; border: none; width: 18px; height: 18px; border-radius: 3px; cursor: pointer; font-weight: 900; font-size: 12px; line-height: 1; }
         .btn-score:hover { background: #ff5722; }
 
-        .btn-action { background: #2f3542; color: #fff; border: none; padding: 5px 8px; font-size: 11px; font-weight: 900; border-radius: 4px; cursor: pointer; }
+        .btn-action { background: #2f3542; color: #fff; border: none; padding: 3px 6px; font-size: 10px; font-weight: 900; border-radius: 4px; cursor: pointer; height: 22px; }
         .btn-action.active { background: #ff5722; }
-        .btn-reset { background: rgba(255, 87, 34, 0.15); color: #ff5722; border: 1px solid #ff5722; margin-left: 3px; }
+        .btn-reset { background: rgba(255, 87, 34, 0.15); color: #ff5722; border: 1px solid #ff5722; margin-left: 2px; }
         .btn-reset:hover { background: #ff5722; color: #fff; }
 
-        .match-card { background: #0f1013; border: 1px solid #282a36; border-radius: 6px; padding: 8px 6px; margin-bottom: 5px; transition: border-color 0.2s; }
+        .match-card { background: #0f1013; border: 1px solid #282a36; border-radius: 5px; padding: 4px 5px; margin-bottom: 3px; transition: border-color 0.2s; }
         .match-card.active-set { border-color: #ffffff; background: #161820; }
         .match-card.hidden-set { opacity: 0.4; }
 
-        .match-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 11px; color: #888; }
-        .set-title { font-weight: 900; color: #fff; display: flex; align-items: center; gap: 4px; }
-        .ace-tag { color: #ff0055; font-weight: 900; font-size: 13px; letter-spacing: 0.5px; }
+        .match-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; font-size: 10px; color: #888; }
+        .set-title { font-weight: 900; color: #fff; display: flex; align-items: center; gap: 3px; }
+        .ace-tag { color: #ff0055; font-weight: 900; font-size: 11px; letter-spacing: 0.5px; }
 
         .player-row { display: flex; gap: 3px; align-items: center; justify-content: space-between; }
-        .race-select { background: #1a1b20; border: 1px solid #3a3d4a; color: #fff; font-size: 11px; padding: 4px 1px; border-radius: 3px; cursor: pointer; font-weight: 900; width: 68px; flex-shrink: 0; }
-        .btn-win { background: #222; border: 1px solid #444; color: #aaa; padding: 4px 4px; font-size: 11px; border-radius: 3px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+        .race-select { background: #1a1b20; border: 1px solid #3a3d4a; color: #fff; font-size: 10px; padding: 2px 1px; border-radius: 3px; cursor: pointer; font-weight: 900; width: 62px; flex-shrink: 0; height: 22px; }
+        .btn-win { background: #222; border: 1px solid #444; color: #aaa; padding: 2px 4px; font-size: 10px; border-radius: 3px; cursor: pointer; white-space: nowrap; flex-shrink: 0; height: 22px; }
         .btn-win.winner { background: #ff5722; color: #fff; border-color: #ff5722; }
         
-        .p-input { width: 56px; text-align: center; flex-shrink: 0; }
-        .map-input { width: 58px; text-align: center; flex-shrink: 0; }
+        .p-input { width: 54px; text-align: center; flex-shrink: 0; height: 22px; font-size: 11px; }
+        .map-input { width: 56px; text-align: center; flex-shrink: 0; height: 22px; font-size: 11px; }
 
         /* 방송 송출 ON/OFF 토글 버튼 스타일 */
         .btn-broadcast {
             width: 100%;
-            padding: 10px 0;
-            font-size: 14px;
+            padding: 5px 0;
+            font-size: 12px;
             font-weight: 900;
-            border-radius: 6px;
+            border-radius: 5px;
             border: none;
             cursor: pointer;
             transition: all 0.2s;
             letter-spacing: 1px;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
+            height: 26px;
         }
         .btn-broadcast.on {
             background: #2ed573;
             color: #121316;
-            box-shadow: 0 0 12px rgba(46, 213, 115, 0.4);
+            box-shadow: 0 0 8px rgba(46, 213, 115, 0.4);
         }
         .btn-broadcast.off {
             background: #2b2d36;
@@ -96,7 +97,7 @@
             </div>
         </div>
         
-        <!-- 방송 송출 ON/OFF 토글 버튼 (상단 이동) -->
+        <!-- 방송 송출 ON/OFF 토글 버튼 -->
         <button id="btn-broadcast-toggle" class="btn-broadcast on" onclick="toggleBroadcast()">
             방송송출 ON 🟢
         </button>
@@ -107,7 +108,7 @@
         </div>
 
         <div id="team-score-section" class="input-row" style="justify-content: space-between;">
-            <input type="text" id="team-l" value="" placeholder="" style="width: 120px; text-align: right;" oninput="saveAndSend()">
+            <input type="text" id="team-l" value="" placeholder="" style="width: 110px; text-align: right;" oninput="saveAndSend()">
             
             <div class="score-box">
                 <button class="btn-score" onclick="changeScore('left', -1)">-</button>
@@ -123,10 +124,10 @@
                 <button class="btn-score" onclick="changeScore('right', 1)">+</button>
             </div>
 
-            <input type="text" id="team-r" value="" placeholder="" style="width: 120px;" oninput="saveAndSend()">
+            <input type="text" id="team-r" value="" placeholder="" style="width: 110px;" oninput="saveAndSend()">
         </div>
 
-        <div class="input-row" style="margin-top: 8px; justify-content: space-between;">
+        <div class="input-row" style="margin-top: 4px; justify-content: space-between;">
             <button id="btn-glow" class="btn-action active" onclick="toggleGlow()">불빛 끄기 OFF</button>
             <div id="match-ctrl-btns">
                 <button class="btn-action" onclick="hideLastMatch()">경기 숨기기 ↩</button>
@@ -135,7 +136,7 @@
         </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" style="margin-bottom: 0;">
         <div class="panel-title" id="match-list-title">매치업 목록</div>
         <div id="matches-container"></div>
     </div>
