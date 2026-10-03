@@ -2,15 +2,21 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>프로리그 스코어보드 콘솔</title>
+    <title>MatchUP Remote Console</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@700;900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
         body { background: #121316; color: #e0e0e0; padding: 12px; width: 460px; user-select: none; }
 
+        /* 상단 메인 탭 */
+        .tab-menu { display: flex; gap: 6px; margin-bottom: 10px; }
+        .tab-btn { flex: 1; padding: 10px 0; background: #22242b; border: 1px solid #3a3d4a; color: #888; font-weight: 900; font-size: 14px; border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .tab-btn:hover { background: #2a2d37; color: #fff; }
+        .tab-btn.active { background: #ff5722; color: #fff; border-color: #ff5722; box-shadow: 0 0 10px rgba(255, 87, 34, 0.4); }
+
         .panel { background: #1a1b20; border: 1px solid #2e3038; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
-        .panel-title { font-size: 13px; font-weight: 900; color: #ff4757; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .panel-title { font-size: 13px; font-weight: 900; color: #ff5722; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
         .status-bar { font-size: 11px; padding: 5px; border-radius: 4px; background: #0d0e11; color: #888; text-align: center; font-weight: bold; margin-bottom: 8px; }
         .status-online { color: #2ed573; border: 1px solid #2ed573; }
@@ -18,17 +24,17 @@
 
         .input-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
         input[type="text"] { background: #0f1013; border: 1px solid #3a3d4a; color: #fff; padding: 6px; border-radius: 4px; font-weight: 700; font-size: 13px; outline: none; }
-        input[type="text"]:focus { border-color: #ff4757; }
+        input[type="text"]:focus { border-color: #ff5722; }
         
         .score-box { display: flex; align-items: center; gap: 4px; background: #0f1013; padding: 2px 6px; border-radius: 4px; border: 1px solid #3a3d4a; }
-        .score-val { width: 22px; text-align: center; font-size: 16px; font-weight: 900; color: #ff4757; }
+        .score-val { width: 22px; text-align: center; font-size: 16px; font-weight: 900; color: #ff5722; }
         .btn-score { background: #2f3542; color: #fff; border: none; width: 20px; height: 20px; border-radius: 3px; cursor: pointer; font-weight: 900; }
-        .btn-score:hover { background: #ff4757; }
+        .btn-score:hover { background: #ff5722; }
 
         .btn-action { background: #2f3542; color: #fff; border: none; padding: 5px 8px; font-size: 11px; font-weight: 900; border-radius: 4px; cursor: pointer; }
-        .btn-action.active { background: #ff4757; }
-        .btn-reset { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid #ff4757; margin-left: 3px; }
-        .btn-reset:hover { background: #ff4757; color: #fff; }
+        .btn-action.active { background: #ff5722; }
+        .btn-reset { background: rgba(255, 87, 34, 0.15); color: #ff5722; border: 1px solid #ff5722; margin-left: 3px; }
+        .btn-reset:hover { background: #ff5722; color: #fff; }
 
         .match-card { background: #0f1013; border: 1px solid #282a36; border-radius: 6px; padding: 8px 6px; margin-bottom: 5px; transition: border-color 0.2s; }
         .match-card.active-set { border-color: #ffffff; background: #161820; }
@@ -40,7 +46,7 @@
         .player-row { display: flex; gap: 3px; align-items: center; justify-content: space-between; }
         .race-select { background: #1a1b20; border: 1px solid #3a3d4a; color: #fff; font-size: 11px; padding: 4px 1px; border-radius: 3px; cursor: pointer; font-weight: 900; width: 68px; flex-shrink: 0; }
         .btn-win { background: #222; border: 1px solid #444; color: #aaa; padding: 4px 4px; font-size: 11px; border-radius: 3px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
-        .btn-win.winner { background: #ff4757; color: #fff; border-color: #ff4757; }
+        .btn-win.winner { background: #ff5722; color: #fff; border-color: #ff5722; }
         
         .p-input { width: 56px; text-align: center; flex-shrink: 0; }
         .map-input { width: 58px; text-align: center; flex-shrink: 0; }
@@ -48,23 +54,30 @@
 </head>
 <body>
 
+    <!-- 상단 탭 메뉴 -->
+    <div class="tab-menu">
+        <button id="tab-btn-set1" class="tab-btn active" onclick="switchTab('set1')">1Set</button>
+        <button id="tab-btn-set2" class="tab-btn" onclick="switchTab('set2')">2Set</button>
+        <button id="tab-btn-ace" class="tab-btn" onclick="switchTab('ace')">ace</button>
+    </div>
+
     <div class="panel">
         <div class="panel-title">
-            <span>스타 프로리그 제어 콘솔</span>
+            <span id="console-header-title">1Set 스코어보드 제어</span>
             <div>
                 <button class="btn-action btn-reset" onclick="resetOnlyScores()">🔄 점수 리셋</button>
-                <button class="btn-action btn-reset" onclick="resetAllData()">💥 전체 초기화</button>
+                <button class="btn-action btn-reset" onclick="resetAllData()">💥 현재 탭 초기화</button>
             </div>
         </div>
         
         <div id="status-text" class="status-bar status-offline">송출 화면 연동 중... 🟡</div>
 
         <div class="input-row">
-            <input type="text" id="league-title" value="프로리그 9전" placeholder="대회명" style="width: 100%;" oninput="saveAndSend()">
+            <input type="text" id="league-title" value="프로리그 대전" placeholder="대회명" style="width: 100%;" oninput="saveAndSend()">
         </div>
 
         <div class="input-row" style="justify-content: space-between;">
-            <input type="text" id="team-l" value="JD팀" style="width: 120px; text-align: right;" oninput="saveAndSend()">
+            <input type="text" id="team-l" value="A팀" style="width: 120px; text-align: right;" oninput="saveAndSend()">
             
             <div class="score-box">
                 <button class="btn-score" onclick="changeScore('left', -1)">-</button>
@@ -80,7 +93,7 @@
                 <button class="btn-score" onclick="changeScore('right', 1)">+</button>
             </div>
 
-            <input type="text" id="team-r" value="적팀" style="width: 120px;" oninput="saveAndSend()">
+            <input type="text" id="team-r" value="B팀" style="width: 120px;" oninput="saveAndSend()">
         </div>
 
         <div class="input-row" style="margin-top: 8px; justify-content: space-between;">
@@ -93,22 +106,51 @@
     </div>
 
     <div class="panel">
-        <div class="panel-title">매치업 세트 목록 (1~9세트)</div>
+        <div class="panel-title" id="match-list-title">매치업 목록</div>
         <div id="matches-container"></div>
     </div>
 
 <script>
-    const TARGET_ID = 'star-proleague-room-jdpro';
-    const STORAGE_KEY = 'star_proleague_console_saved_data';
-    
+    const ROOM_TARGETS = {
+        'set1': 'star-proleague-room-set1',
+        'set2': 'star-proleague-room-set2',
+        'ace': 'star-proleague-room-ace'
+    };
+
+    let currentTab = 'set1';
     let peer = null;
     let conn = null;
     let isGlowOn = true;
 
+    function switchTab(tabName) {
+        currentTab = tabName;
+
+        // 탭 버튼 스타일 업데이트
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`tab-btn-${tabName}`).classList.add('active');
+
+        // 헤더 타이틀 변경
+        const tabTitleMap = { 'set1': '1Set 스코어보드', 'set2': '2Set 스코어보드', 'ace': 'ACE 에이스 결정전' };
+        document.getElementById('console-header-title').innerText = `${tabTitleMap[tabName]} 제어`;
+
+        // 세트 카드 재구성 (ACE전은 1세트만 생성)
+        renderMatches();
+        
+        // 해당 탭 저장 데이터 불러오기
+        loadSavedData();
+
+        // 수신기 연동 재연결
+        initPeer();
+    }
+
     function initPeer() {
+        if (conn) {
+            try { conn.close(); } catch(e){}
+        }
         if (peer) {
             try { peer.destroy(); } catch(e){}
         }
+
         peer = new Peer();
 
         peer.on('open', () => {
@@ -116,7 +158,7 @@
         });
 
         peer.on('error', () => {
-            updateStatus(false, '서버 연결 재시도 중... 🟡');
+            updateStatus(false, '서버 연동 실패 (재시도 중...) 🟡');
             setTimeout(initPeer, 3000);
         });
     }
@@ -124,19 +166,20 @@
     function connectToOverlay() {
         if (!peer || peer.destroyed) return;
         
-        conn = peer.connect(TARGET_ID);
+        const targetRoom = ROOM_TARGETS[currentTab];
+        conn = peer.connect(targetRoom);
 
         conn.on('open', () => {
-            updateStatus(true, '송출 화면 연동 성공 🟢');
+            updateStatus(true, `[${currentTab.toUpperCase()}] 송출 화면 연동 성공 🟢`);
             saveAndSend();
         });
 
         conn.on('close', () => {
-            updateStatus(false, '송출 화면 연결 끊김 (재연결 시도 중...) 🔴');
+            updateStatus(false, `[${currentTab.toUpperCase()}] 송출 화면 연결 끊김 🔴`);
         });
 
         conn.on('error', () => {
-            updateStatus(false, '송출 화면 찾는 중... 🟡');
+            updateStatus(false, `[${currentTab.toUpperCase()}] 송출 화면 찾는 중... 🟡`);
         });
     }
 
@@ -153,7 +196,10 @@
         if (!container) return;
         container.innerHTML = '';
 
-        for(let i = 1; i <= 9; i++) {
+        // ACE 탭은 1경기만, 1Set/2Set 탭은 9경기 생성
+        const totalMatches = currentTab === 'ace' ? 1 : 9;
+
+        for(let i = 1; i <= totalMatches; i++) {
             const card = document.createElement('div');
             card.className = `match-card ${i===1?'active-set':''}`;
             card.id = `card-${i}`;
@@ -161,7 +207,7 @@
                 <div class="match-header">
                     <span class="set-title">
                         <input type="radio" name="active-set" value="${i}" ${i===1?'checked':''} onchange="setActiveSet(${i})">
-                        ${i}세트 경기
+                        ${currentTab === 'ace' ? 'ACE 결정전 Match' : i + '세트 경기'}
                     </span>
                     <label style="cursor:pointer;">
                         <input type="checkbox" id="vis-${i}" ${i===1?'checked':''} onchange="saveAndSend()"> 화면 표시
@@ -194,7 +240,8 @@
     }
 
     function setActiveSet(setNum) {
-        for(let i=1; i<=9; i++) {
+        const totalMatches = currentTab === 'ace' ? 1 : 9;
+        for(let i=1; i<=totalMatches; i++) {
             const card = document.getElementById(`card-${i}`);
             if(card) {
                 if(i === setNum) card.classList.add('active-set');
@@ -253,7 +300,8 @@
     }
 
     function showNextMatch() {
-        for(let i=1; i<=9; i++) {
+        const totalMatches = currentTab === 'ace' ? 1 : 9;
+        for(let i=1; i<=totalMatches; i++) {
             const chk = document.getElementById(`vis-${i}`);
             if(chk && !chk.checked) {
                 chk.checked = true;
@@ -264,7 +312,8 @@
     }
 
     function hideLastMatch() {
-        for(let i=9; i>=1; i--) {
+        const totalMatches = currentTab === 'ace' ? 1 : 9;
+        for(let i=totalMatches; i>=1; i--) {
             const chk = document.getElementById(`vis-${i}`);
             if(chk && chk.checked && i > 1) {
                 chk.checked = false;
@@ -275,10 +324,11 @@
     }
 
     function resetOnlyScores() {
-        if(!confirm("점수와 승패 기록만 초기화할까요?")) return;
+        if(!confirm(`[${currentTab.toUpperCase()}] 점수와 승패 기록만 초기화할까요?`)) return;
         document.getElementById('score-l').innerText = "0";
         document.getElementById('score-r').innerText = "0";
-        for(let i=1; i<=9; i++) {
+        const totalMatches = currentTab === 'ace' ? 1 : 9;
+        for(let i=1; i<=totalMatches; i++) {
             const winL = document.getElementById(`win-l-${i}`);
             const winR = document.getElementById(`win-r-${i}`);
             if(winL) winL.classList.remove('winner');
@@ -288,13 +338,22 @@
     }
 
     function resetAllData() {
-        if(!confirm("모든 대회명, 팀명, 선수 이름, 점수를 싹 초기화하시겠습니까?")) return;
-        localStorage.removeItem(STORAGE_KEY);
-        location.reload();
+        if(!confirm(`현재 탭 [${currentTab.toUpperCase()}] 의 모든 설정을 초기화하시겠습니까?`)) return;
+        localStorage.removeItem(`star_proleague_saved_data_${currentTab}`);
+        switchTab(currentTab);
     }
 
     function loadSavedData() {
-        const savedRaw = localStorage.getItem(STORAGE_KEY);
+        const storageKey = `star_proleague_saved_data_${currentTab}`;
+        const savedRaw = localStorage.getItem(storageKey);
+        
+        // 초기 기본값 세팅
+        document.getElementById('league-title').value = currentTab === 'ace' ? "에이스 결정전" : `${currentTab.toUpperCase()} 매치`;
+        document.getElementById('team-l').value = "A팀";
+        document.getElementById('team-r').value = "B팀";
+        document.getElementById('score-l').innerText = "0";
+        document.getElementById('score-r').innerText = "0";
+
         if (!savedRaw) return;
 
         try {
@@ -349,14 +408,15 @@
                 });
             }
         } catch(e) {
-            console.error("저장된 데이터를 불러오는 중 오류 발생:", e);
+            console.error("데이터 로드 오류:", e);
         }
     }
 
     function saveAndSend() {
+        const totalMatches = currentTab === 'ace' ? 1 : 9;
         const matches = [];
 
-        for(let i=1; i<=9; i++) {
+        for(let i=1; i<=totalMatches; i++) {
             const visChk = document.getElementById(`vis-${i}`);
             const isVis = visChk ? visChk.checked : true;
             const activeRadios = document.querySelectorAll(`input[name="active-set"]`);
@@ -400,7 +460,8 @@
             matches: matches
         };
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        // 현재 탭 전용 저장소에 저장
+        localStorage.setItem(`star_proleague_saved_data_${currentTab}`, JSON.stringify(data));
 
         if(conn && conn.open) {
             conn.send(data);
@@ -408,9 +469,7 @@
     }
 
     window.onload = () => {
-        renderMatches();
-        loadSavedData();
-        initPeer();
+        switchTab('set1');
     };
 
     setInterval(() => {
