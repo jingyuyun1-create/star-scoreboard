@@ -78,7 +78,7 @@
         
         <div id="status-text" class="status-bar status-offline">송출 화면 연동 중... 🟡</div>
 
-        <!-- ACE 탭 선택 시 자동으로 숨겨지는 영역들 -->
+        <!-- ACE 탭 선택 시 숨겨지는 영역 -->
         <div id="league-title-section" class="input-row">
             <input type="text" id="league-title" value="프로리그 대전" placeholder="대회명" style="width: 100%;" oninput="saveAndSend()">
         </div>
@@ -198,7 +198,6 @@
 
         const isAce = tabName === 'ace';
 
-        // ACE 탭일 때 불필요한 컨트롤 숨기기
         const leagueSec = document.getElementById('league-title-section');
         const teamScoreSec = document.getElementById('team-score-section');
         const btnResetScore = document.getElementById('btn-reset-score');
@@ -244,9 +243,9 @@
                 <div class="player-row">
                     <select id="race-l-${i}" class="race-select" onchange="saveAndSend()">
                         <option value="color-default">선택안함</option>
-                        <option value="color-terran">테란(T)</option>
-                        <option value="color-zerg">저그(Z)</option>
-                        <option value="color-protoss">프로토스(P)</option>
+                        <option value="color-zerg">저그</option>
+                        <option value="color-terran">테란</option>
+                        <option value="color-protoss">토스</option>
                     </select>
                     <input type="text" id="p-l-${i}" class="p-input" value="" placeholder="선수A" oninput="saveAndSend()">
                     <button id="win-l-${i}" class="btn-win" onclick="setWinner(${i}, 'left')">🏆 승</button>
@@ -257,9 +256,9 @@
                     <input type="text" id="p-r-${i}" class="p-input" value="" placeholder="선수B" oninput="saveAndSend()">
                     <select id="race-r-${i}" class="race-select" onchange="saveAndSend()">
                         <option value="color-default">선택안함</option>
-                        <option value="color-terran">테란(T)</option>
-                        <option value="color-zerg">저그(Z)</option>
-                        <option value="color-protoss">프로토스(P)</option>
+                        <option value="color-zerg">저그</option>
+                        <option value="color-terran">테란</option>
+                        <option value="color-protoss">토스</option>
                     </select>
                 </div>
             `;
