@@ -121,6 +121,7 @@
     let peer = null;
     let conns = { 'set1': null, 'set2': null, 'ace': null };
     let isGlowOn = true;
+    let isLoading = false; // 💡 로딩 중 자동저장 방지용 플래그
 
     function initPeer() {
         if (peer && !peer.destroyed) return;
@@ -182,11 +183,9 @@
     function switchTab(tabName) {
         currentTab = tabName;
 
-        // 탭 버튼 스타일 업데이트
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`tab-btn-${tabName}`).classList.add('active');
 
-        // 헤더 타이틀 변경
         const tabTitleMap = { 'set1': '1Set 스코어보드', 'set2': '2Set 스코어보드', 'ace': 'ACE 에이스 결정전' };
         document.getElementById('console-header-title').innerText = `${tabTitleMap[tabName]} 제어`;
 
@@ -347,6 +346,8 @@
     }
 
     function loadSavedData() {
+        isLoading = true; // 💡 데이터를 읽어오는 중에는 자동 저장 막기
+
         const storageKey = `star_proleague_saved_data_${currentTab}`;
         const savedRaw = localStorage.getItem(storageKey);
         
@@ -356,7 +357,10 @@
         document.getElementById('score-l').innerText = "0";
         document.getElementById('score-r').innerText = "0";
 
-        if (!savedRaw) return;
+        if (!savedRaw) {
+            isLoading = false;
+            return;
+        }
 
         try {
             const data = JSON.parse(savedRaw);
@@ -411,6 +415,8 @@
             }
         } catch(e) {
             console.error("데이터 로드 오류:", e);
+        } finally {
+            isLoading = false; // 💡 로딩 완료 후 저장 기능 다시 활성화
         }
     }
 
@@ -464,6 +470,8 @@
     }
 
     function saveAndSend() {
+        if (isLoading) return; // 💡 로딩 중일 때는 자동저장을 하지 않고 무시함
+
         const data = collectCurrentTabData();
         localStorage.setItem(`star_proleague_saved_data_${currentTab}`, JSON.stringify(data));
 
