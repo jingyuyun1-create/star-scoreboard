@@ -7,9 +7,9 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@700;900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
-        body { background: #121316; color: #e0e0e0; padding: 15px; width: 480px; user-select: none; }
+        body { background: #121316; color: #e0e0e0; padding: 12px; width: 440px; user-select: none; }
 
-        .panel { background: #1a1b20; border: 1px solid #2e3038; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+        .panel { background: #1a1b20; border: 1px solid #2e3038; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
         .panel-title { font-size: 13px; font-weight: 900; color: #ff4757; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
         .status-bar { font-size: 11px; padding: 5px; border-radius: 4px; background: #0d0e11; color: #888; text-align: center; font-weight: bold; margin-bottom: 8px; }
@@ -17,30 +17,33 @@
         .status-offline { color: #ff4757; border: 1px solid #ff4757; }
 
         .input-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
-        input[type="text"] { background: #0f1013; border: 1px solid #3a3d4a; color: #fff; padding: 6px 8px; border-radius: 4px; font-weight: 700; font-size: 13px; outline: none; }
+        input[type="text"] { background: #0f1013; border: 1px solid #3a3d4a; color: #fff; padding: 6px; border-radius: 4px; font-weight: 700; font-size: 13px; outline: none; }
         input[type="text"]:focus { border-color: #ff4757; }
         
         .score-box { display: flex; align-items: center; gap: 4px; background: #0f1013; padding: 2px 6px; border-radius: 4px; border: 1px solid #3a3d4a; }
-        .score-val { width: 25px; text-align: center; font-size: 16px; font-weight: 900; color: #ff4757; }
-        .btn-score { background: #2f3542; color: #fff; border: none; width: 22px; height: 22px; border-radius: 3px; cursor: pointer; font-weight: 900; }
+        .score-val { width: 22px; text-align: center; font-size: 16px; font-weight: 900; color: #ff4757; }
+        .btn-score { background: #2f3542; color: #fff; border: none; width: 20px; height: 20px; border-radius: 3px; cursor: pointer; font-weight: 900; }
         .btn-score:hover { background: #ff4757; }
 
-        .btn-action { background: #2f3542; color: #fff; border: none; padding: 6px 10px; font-size: 11px; font-weight: 900; border-radius: 4px; cursor: pointer; }
+        .btn-action { background: #2f3542; color: #fff; border: none; padding: 5px 8px; font-size: 11px; font-weight: 900; border-radius: 4px; cursor: pointer; }
         .btn-action.active { background: #ff4757; }
-        .btn-reset { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid #ff4757; margin-left: 4px; }
+        .btn-reset { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid #ff4757; margin-left: 3px; }
         .btn-reset:hover { background: #ff4757; color: #fff; }
 
-        .match-card { background: #0f1013; border: 1px solid #282a36; border-radius: 6px; padding: 6px; margin-bottom: 6px; transition: border-color 0.2s; }
+        .match-card { background: #0f1013; border: 1px solid #282a36; border-radius: 6px; padding: 6px; margin-bottom: 5px; transition: border-color 0.2s; }
         .match-card.active-set { border-color: #ffffff; background: #161820; }
         .match-card.hidden-set { opacity: 0.4; }
 
         .match-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 11px; color: #888; }
-        .set-title { font-weight: 900; color: #fff; display: flex; align-items: center; gap: 6px; }
+        .set-title { font-weight: 900; color: #fff; display: flex; align-items: center; gap: 4px; }
 
-        .player-row { display: flex; gap: 4px; align-items: center; }
-        .race-select { background: #1a1b20; border: 1px solid #3a3d4a; color: #fff; font-size: 11px; padding: 4px; border-radius: 3px; cursor: pointer; font-weight: 900; }
-        .btn-win { background: #222; border: 1px solid #444; color: #aaa; padding: 4px 6px; font-size: 11px; border-radius: 3px; cursor: pointer; }
+        .player-row { display: flex; gap: 4px; align-items: center; justify-content: space-between; }
+        .race-select { background: #1a1b20; border: 1px solid #3a3d4a; color: #fff; font-size: 11px; padding: 4px 2px; border-radius: 3px; cursor: pointer; font-weight: 900; width: 68px; }
+        .btn-win { background: #222; border: 1px solid #444; color: #aaa; padding: 4px 5px; font-size: 11px; border-radius: 3px; cursor: pointer; white-space: nowrap; }
         .btn-win.winner { background: #ff4757; color: #fff; border-color: #ff4757; }
+        
+        .p-input { width: 60px; text-align: center; }
+        .map-input { width: 65px; text-align: center; }
     </style>
 </head>
 <body>
@@ -61,7 +64,7 @@
         </div>
 
         <div class="input-row" style="justify-content: space-between;">
-            <input type="text" id="team-l" value="JD팀" style="width: 120px; text-align: right;" oninput="saveAndSend()">
+            <input type="text" id="team-l" value="JD팀" style="width: 110px; text-align: right;" oninput="saveAndSend()">
             
             <div class="score-box">
                 <button class="btn-score" onclick="changeScore('left', -1)">-</button>
@@ -77,10 +80,10 @@
                 <button class="btn-score" onclick="changeScore('right', 1)">+</button>
             </div>
 
-            <input type="text" id="team-r" value="적팀" style="width: 120px;" oninput="saveAndSend()">
+            <input type="text" id="team-r" value="적팀" style="width: 110px;" oninput="saveAndSend()">
         </div>
 
-        <div class="input-row" style="margin-top: 10px; justify-content: space-between;">
+        <div class="input-row" style="margin-top: 8px; justify-content: space-between;">
             <button id="btn-glow" class="btn-action active" onclick="toggleGlow()">불빛 끄기 OFF</button>
             <div>
                 <button class="btn-action" onclick="hideLastMatch()">경기 숨기기 ↩</button>
@@ -171,13 +174,13 @@
                         <option value="color-zerg">저그(Z)</option>
                         <option value="color-protoss">프로토스(P)</option>
                     </select>
-                    <input type="text" id="p-l-${i}" value="선수A" style="flex:1;" oninput="saveAndSend()">
+                    <input type="text" id="p-l-${i}" class="p-input" value="선수A" oninput="saveAndSend()">
                     <button id="win-l-${i}" class="btn-win" onclick="setWinner(${i}, 'left')">🏆 승</button>
                     
-                    <input type="text" id="map-${i}" value="맵이름" style="width:70px; text-align:center;" oninput="saveAndSend()">
+                    <input type="text" id="map-${i}" class="map-input" value="맵이름" oninput="saveAndSend()">
                     
                     <button id="win-r-${i}" class="btn-win" onclick="setWinner(${i}, 'right')">🏆 승</button>
-                    <input type="text" id="p-r-${i}" value="선수B" style="flex:1; text-align:right;" oninput="saveAndSend()">
+                    <input type="text" id="p-r-${i}" class="p-input" value="선수B" oninput="saveAndSend()">
                     <select id="race-r-${i}" class="race-select" onchange="saveAndSend()">
                         <option value="color-default">선택안함</option>
                         <option value="color-terran">테란(T)</option>
@@ -397,10 +400,8 @@
             matches: matches
         };
 
-        // 로컬 스토리지에 자동 저장
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
-        // 송출 화면(overlay)으로 데이터 전송
         if(conn && conn.open) {
             conn.send(data);
         }
