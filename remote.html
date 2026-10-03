@@ -27,7 +27,7 @@
 
         .btn-action { background: #2f3542; color: #fff; border: none; padding: 6px 10px; font-size: 11px; font-weight: 900; border-radius: 4px; cursor: pointer; }
         .btn-action.active { background: #ff4757; }
-        .btn-reset { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid #ff4757; }
+        .btn-reset { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid #ff4757; margin-left: 4px; }
         .btn-reset:hover { background: #ff4757; color: #fff; }
 
         .match-card { background: #0f1013; border: 1px solid #282a36; border-radius: 6px; padding: 6px; margin-bottom: 6px; transition: border-color 0.2s; }
@@ -48,7 +48,10 @@
     <div class="panel">
         <div class="panel-title">
             <span>스타 프로리그 제어 콘솔</span>
-            <button class="btn-action btn-reset" onclick="resetOnlyScores()">🔄 점수 리셋</button>
+            <div>
+                <button class="btn-action btn-reset" onclick="resetOnlyScores()">🔄 점수 리셋</button>
+                <button class="btn-action btn-reset" onclick="resetAllData()">💥 전체 초기화</button>
+            </div>
         </div>
         
         <div id="status-text" class="status-bar status-offline">송출 화면 연동 중... 🟡</div>
@@ -92,8 +95,9 @@
     </div>
 
 <script>
-    // overlay.html의 ROOM_ID와 완전히 동일하게 지정
     const TARGET_ID = 'star-proleague-room-jdpro';
+    const STORAGE_KEY = 'star_proleague_console_saved_data';
+    
     let peer = null;
     let conn = null;
     let isGlowOn = true;
@@ -268,7 +272,7 @@
     }
 
     function resetOnlyScores() {
-        if(!confirm("점수와 승패 기록을 초기화할까요?")) return;
+        if(!confirm("점수와 승패 기록만 초기화할까요?")) return;
         document.getElementById('score-l').innerText = "0";
         document.getElementById('score-r').innerText = "0";
         for(let i=1; i<=9; i++) {
@@ -278,6 +282,72 @@
             if(winR) winR.classList.remove('winner');
         }
         saveAndSend();
+    }
+
+    function resetAllData() {
+        if(!confirm("모든 대회명, 팀명, 선수 이름, 점수를 싹 초기화하시겠습니까?")) return;
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+    }
+
+    function loadSavedData() {
+        const savedRaw = localStorage.getItem(STORAGE_KEY);
+        if (!savedRaw) return;
+
+        try {
+            const data = JSON.parse(savedRaw);
+
+            if (data.leagueTitle) document.getElementById('league-title').value = data.leagueTitle;
+            if (data.teamL) document.getElementById('team-l').value = data.teamL;
+            if (data.teamR) document.getElementById('team-r').value = data.teamR;
+            if (data.scoreL !== undefined) document.getElementById('score-l').innerText = data.scoreL;
+            if (data.scoreR !== undefined) document.getElementById('score-r').innerText = data.scoreR;
+
+            if (data.isGlowOn !== undefined) {
+                isGlowOn = data.isGlowOn;
+                const btn = document.getElementById('btn-glow');
+                if (btn) {
+                    btn.innerText = isGlowOn ? "불빛 끄기 OFF" : "불빛 켜기 ON";
+                    btn.className = `btn-action ${isGlowOn ? 'active' : ''}`;
+                }
+            }
+
+            if (data.matches && data.matches.length > 0) {
+                data.matches.forEach((m, idx) => {
+                    const i = idx + 1;
+                    const visChk = document.getElementById(`vis-${i}`);
+                    if (visChk) visChk.checked = m.visible;
+
+                    const radios = document.querySelectorAll(`input[name="active-set"]`);
+                    if (radios[idx] && m.active) {
+                        radios[idx].checked = true;
+                        setActiveSet(i);
+                    }
+
+                    const pL = document.getElementById(`p-l-${i}`);
+                    const pR = document.getElementById(`p-r-${i}`);
+                    const map = document.getElementById(`map-${i}`);
+                    const raceL = document.getElementById(`race-l-${i}`);
+                    const raceR = document.getElementById(`race-r-${i}`);
+
+                    if (pL) pL.value = m.playerL || "";
+                    if (pR) pR.value = m.playerR || "";
+                    if (map) map.value = m.map || "";
+                    if (raceL) raceL.value = m.raceL || "color-default";
+                    if (raceR) raceR.value = m.raceR || "color-default";
+
+                    const winL = document.getElementById(`win-l-${i}`);
+                    const winR = document.getElementById(`win-r-${i}`);
+                    if (winL) winL.classList.remove('winner');
+                    if (winR) winR.classList.remove('winner');
+
+                    if (m.winner === 'left' && winL) winL.classList.add('winner');
+                    if (m.winner === 'right' && winR) winR.classList.add('winner');
+                });
+            }
+        } catch(e) {
+            console.error("저장된 데이터를 불러오는 중 오류 발생:", e);
+        }
     }
 
     function saveAndSend() {
@@ -327,6 +397,10 @@
             matches: matches
         };
 
+        // 로컬 스토리지에 자동 저장
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+        // 송출 화면(overlay)으로 데이터 전송
         if(conn && conn.open) {
             conn.send(data);
         }
@@ -334,10 +408,10 @@
 
     window.onload = () => {
         renderMatches();
+        loadSavedData();
         initPeer();
     };
 
-    // 3초마다 연결 체크 및 주기적 재연결
     setInterval(() => {
         if (!conn || !conn.open) {
             connectToOverlay();
