@@ -59,7 +59,6 @@
     </div>
 
     <script>
-        // 본인만의 고정 방 이름 (필요시 뒤의 문구를 자유롭게 변경)
         const ROOM_ID = 'star-proleague-room-set1';
         let peer = null;
 
@@ -86,6 +85,15 @@
 
         function updateUI(data) {
             if(!data) return;
+
+            // 🔴 방송 송출 ON/OFF 처리
+            if (data.isBroadcastOn === false) {
+                document.body.style.display = 'none';
+                return;
+            } else {
+                document.body.style.display = 'block';
+            }
+
             document.getElementById('league-title').innerText = data.leagueTitle || "프로리그 9전";
             document.getElementById('team-l').innerText = data.teamL || "JD팀";
             document.getElementById('team-r').innerText = data.teamR || "적팀";
@@ -129,16 +137,10 @@
 
             peer.on('connection', (conn) => {
                 conn.on('data', (data) => updateUI(data));
-                if (data.isBroadcastOn === false) {
-    document.body.style.display = 'none';
-} else {
-    document.body.style.display = 'block';
-}
             });
 
             peer.on('error', (err) => {
                 if (err.type === 'unavailable-id') {
-                    // 서버에 이전 연결이 아직 남아있는 경우 3초 후 자동 재접속
                     setTimeout(initOverlayPeer, 3000);
                 }
             });
