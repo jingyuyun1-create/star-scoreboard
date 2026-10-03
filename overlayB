@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>스타 프로리그 스코어보드 (송출용)</title>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Pretendard:wght@800;900&display=swap');
+
+        body { margin: 0; padding: 20px; background: transparent; font-family: 'Pretendard', sans-serif; font-weight: 900; color: #e0e0e0; user-select: none; letter-spacing: -0.3px; overflow: hidden; }
+        .layout-wrapper { display: flex; align-items: flex-start; gap: 15px; }
+        .scoreboard-container { width: 300px; overflow: hidden; position: relative; display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
+        .color-default { color: #e0e0e0 !important; } 
+        .color-terran  { color: #528ae2 !important; } 
+        .color-zerg    { color: #de4343 !important; } 
+        .color-protoss { color: #dfb121 !important; } 
+        
+        .header-row { display: flex; align-items: stretch; gap: 3px; }
+        .header-left-spacer { width: 12%; background: rgba(12, 12, 12, 0.88); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+        .header-content-box { width: 88%; box-shadow: 0 2px 4px rgba(0,0,0,0.4); display: flex; flex-direction: column; }
+        .league-title { background: rgba(12, 12, 12, 0.88); color: #e0e0e0; font-size: 16px; text-align: center; padding: 3px 0; border-radius: 5px 5px 0 0; border: 1px solid rgba(255, 255, 255, 0.08); border-bottom: none; }
+        .score-header { display: flex; align-items: center; justify-content: space-between; background: #dbdbdb; color: #111111; padding: 4px 12px; font-size: 19px; position: relative; border-radius: 0 0 5px 5px; border: 1px solid rgba(255, 255, 255, 0.08); border-top: none; }
+        .team-name { width: 38%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .score-display { width: 24%; text-align: center; font-family: 'Orbitron', sans-serif; font-size: 23px; }
+        
+        .match-list { display: flex; flex-direction: column; gap: 3px; }
+        .match-row { display: flex; align-items: center; gap: 3px; opacity: 1; transition: all 0.4s; }
+        .match-row.hidden { display: none !important; }
+        .match-num { width: 12%; }
+        .match-num span { background: rgba(12, 12, 12, 0.88); color: #e0e0e0; font-family: 'Orbitron', sans-serif; display: block; width: 100%; height: 30px; line-height: 31px; text-align: center; border-radius: 4px; font-size: 18px; border: 1px solid rgba(255, 255, 255, 0.08); }
+        
+        .match-content-box { display: flex; align-items: center; width: 88%; background: rgba(12, 12, 12, 0.88); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 5px; padding: 3px 0; }
+        .player-wrapper { position: relative; width: 38%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 0 4px; }
+        .player-left, .player-right { width: 100%; text-align: center; font-size: 19px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 24px; padding-top: 2px; }
+        .map-name { width: 24%; text-align: center; color: #b0b0b0; font-size: 13px; }
+        .player-left.loser, .player-right.loser { color: #7a7a7a !important; opacity: 0.75; }
+        
+        .glow-on .match-row.active .match-num span { background: #ffffff !important; color: #111111 !important; }
+        @keyframes pulseGlow { 0%, 100% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 2px 4px rgba(0,0,0,0.4); } 50% { border-color: rgba(255, 255, 255, 0.8); box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); } }
+        .glow-on .match-row.active .match-content-box { animation: pulseGlow 2.5s infinite ease-in-out; }
+    </style>
+</head>
+<body>
+    <div class="layout-wrapper">
+        <div class="scoreboard-container glow-on" id="main-container">
+            <div class="header-row">
+                <div class="header-left-spacer"></div>
+                <div class="header-content-box">
+                    <div class="league-title" id="league-title">프로리그 9전</div>
+                    <div class="score-header">
+                        <div class="team-name" id="team-l" style="text-align: right;">JD팀</div>
+                        <div class="score-display"><span id="score-l">0</span>:<span id="score-r">0</span></div>
+                        <div class="team-name" id="team-r" style="text-align: left;">적팀</div>
+                    </div>
+                </div>
+            </div>
+            <div class="match-list" id="match-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // 본인만의 고정 방 이름 (필요시 뒤의 문구를 자유롭게 변경)
+        const ROOM_ID = 'star-proleague-room-jdpro';
+        let peer = null;
+
+        function initMatches() {
+            const matchList = document.getElementById('match-list');
+            let html = '';
+            for(let i=1; i<=9; i++) {
+                html += `
+                <div class="match-row ${i===1?'active':''}" id="match-${i}">
+                    <div class="match-num"><span>${i}</span></div>
+                    <div class="match-content-box">
+                        <div class="player-wrapper">
+                            <div class="player-left color-default">선수A</div>
+                        </div>
+                        <div class="map-name">맵이름</div>
+                        <div class="player-wrapper">
+                            <div class="player-right color-default">선수B</div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            matchList.innerHTML = html;
+        }
+
+        function updateUI(data) {
+            if(!data) return;
+            document.getElementById('league-title').innerText = data.leagueTitle || "프로리그 9전";
+            document.getElementById('team-l').innerText = data.teamL || "JD팀";
+            document.getElementById('team-r').innerText = data.teamR || "적팀";
+            document.getElementById('score-l').innerText = data.scoreL || "0";
+            document.getElementById('score-r').innerText = data.scoreR || "0";
+
+            const container = document.getElementById('main-container');
+            if(data.isGlowOn) container.classList.add('glow-on');
+            else container.classList.remove('glow-on');
+
+            if(data.matches && data.matches.length > 0) {
+                data.matches.forEach((m, i) => {
+                    const el = document.getElementById(`match-${i+1}`);
+                    if(!el) return;
+                    const pL = el.querySelector('.player-left');
+                    const pR = el.querySelector('.player-right');
+
+                    if(m.visible) el.classList.remove('hidden'); else el.classList.add('hidden');
+                    if(m.active) el.classList.add('active'); else el.classList.remove('active');
+
+                    pL.innerText = m.playerL || " "; 
+                    pR.innerText = m.playerR || " ";
+                    el.querySelector('.map-name').innerText = m.map || " ";
+
+                    pL.className = `player-left ${m.raceL || 'color-default'}`;
+                    pR.className = `player-right ${m.raceR || 'color-default'}`;
+
+                    if(m.winner === 'left') { pL.classList.add('winner'); pR.classList.add('loser'); }
+                    else if(m.winner === 'right') { pR.classList.add('winner'); pL.classList.add('loser'); }
+                    else { pL.classList.remove('winner', 'loser'); pR.classList.remove('winner', 'loser'); }
+                });
+            }
+        }
+
+        function initOverlayPeer() {
+            if (peer) {
+                try { peer.destroy(); } catch(e){}
+            }
+
+            peer = new Peer(ROOM_ID);
+
+            peer.on('connection', (conn) => {
+                conn.on('data', (data) => updateUI(data));
+            });
+
+            peer.on('error', (err) => {
+                if (err.type === 'unavailable-id') {
+                    // 서버에 이전 연결이 아직 남아있는 경우 3초 후 자동 재접속
+                    setTimeout(initOverlayPeer, 3000);
+                }
+            });
+        }
+
+        window.onload = () => {
+            initMatches();
+            initOverlayPeer();
+        };
+    </script>
+</body>
+</html>
