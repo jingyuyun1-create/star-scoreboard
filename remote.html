@@ -71,18 +71,19 @@
         <div class="panel-title">
             <span id="console-header-title">1Set 스코어보드 제어</span>
             <div>
-                <button class="btn-action btn-reset" onclick="resetOnlyScores()">🔄 점수 리셋</button>
+                <button id="btn-reset-score" class="btn-action btn-reset" onclick="resetOnlyScores()">🔄 점수 리셋</button>
                 <button class="btn-action btn-reset" onclick="resetAllData()">💥 현재 탭 초기화</button>
             </div>
         </div>
         
         <div id="status-text" class="status-bar status-offline">송출 화면 연동 중... 🟡</div>
 
-        <div class="input-row">
+        <!-- ACE 탭 선택 시 자동으로 숨겨지는 영역들 -->
+        <div id="league-title-section" class="input-row">
             <input type="text" id="league-title" value="프로리그 대전" placeholder="대회명" style="width: 100%;" oninput="saveAndSend()">
         </div>
 
-        <div class="input-row" style="justify-content: space-between;">
+        <div id="team-score-section" class="input-row" style="justify-content: space-between;">
             <input type="text" id="team-l" value="A팀" style="width: 120px; text-align: right;" oninput="saveAndSend()">
             
             <div class="score-box">
@@ -195,8 +196,18 @@
         const tabTitleMap = { 'set1': '1Set 스코어보드', 'set2': '2Set 스코어보드', 'ace': 'ACE 에이스 결정전' };
         document.getElementById('console-header-title').innerText = `${tabTitleMap[tabName]} 제어`;
 
+        const isAce = tabName === 'ace';
+
+        // ACE 탭일 때 불필요한 컨트롤 숨기기
+        const leagueSec = document.getElementById('league-title-section');
+        const teamScoreSec = document.getElementById('team-score-section');
+        const btnResetScore = document.getElementById('btn-reset-score');
         const ctrlBtns = document.getElementById('match-ctrl-btns');
-        if (ctrlBtns) ctrlBtns.style.display = tabName === 'ace' ? 'none' : 'block';
+
+        if (leagueSec) leagueSec.style.display = isAce ? 'none' : 'flex';
+        if (teamScoreSec) teamScoreSec.style.display = isAce ? 'none' : 'flex';
+        if (btnResetScore) btnResetScore.style.display = isAce ? 'none' : 'inline-block';
+        if (ctrlBtns) ctrlBtns.style.display = isAce ? 'none' : 'block';
 
         renderMatches();
         loadSavedData();
@@ -283,18 +294,18 @@
         if(pos === 'left') {
             if(!wasLeftWinner) {
                 winL.classList.add('winner');
-                scoreL.innerText = parseInt(scoreL.innerText) + 1;
-                if(wasRightWinner) scoreR.innerText = Math.max(0, parseInt(scoreR.innerText) - 1);
+                if(scoreL) scoreL.innerText = parseInt(scoreL.innerText || "0") + 1;
+                if(wasRightWinner && scoreR) scoreR.innerText = Math.max(0, parseInt(scoreR.innerText || "0") - 1);
             } else {
-                scoreL.innerText = Math.max(0, parseInt(scoreL.innerText) - 1);
+                if(scoreL) scoreL.innerText = Math.max(0, parseInt(scoreL.innerText || "0") - 1);
             }
         } else {
             if(!wasRightWinner) {
                 winR.classList.add('winner');
-                scoreR.innerText = parseInt(scoreR.innerText) + 1;
-                if(wasLeftWinner) scoreL.innerText = Math.max(0, parseInt(scoreL.innerText) - 1);
+                if(scoreR) scoreR.innerText = parseInt(scoreR.innerText || "0") + 1;
+                if(wasLeftWinner && scoreL) scoreL.innerText = Math.max(0, parseInt(scoreL.innerText || "0") - 1);
             } else {
-                scoreR.innerText = Math.max(0, parseInt(scoreR.innerText) - 1);
+                if(scoreR) scoreR.innerText = Math.max(0, parseInt(scoreR.innerText || "0") - 1);
             }
         }
         saveAndSend();
@@ -302,7 +313,7 @@
 
     function changeScore(t, val) {
         const el = document.getElementById(t === 'left' ? 'score-l' : 'score-r');
-        el.innerText = Math.max(0, parseInt(el.innerText) + val);
+        if (el) el.innerText = Math.max(0, parseInt(el.innerText || "0") + val);
         saveAndSend();
     }
 
@@ -342,8 +353,11 @@
 
     function resetOnlyScores() {
         if(!confirm(`[${currentTab.toUpperCase()}] 점수와 승패 기록만 초기화할까요?`)) return;
-        document.getElementById('score-l').innerText = "0";
-        document.getElementById('score-r').innerText = "0";
+        const scoreL = document.getElementById('score-l');
+        const scoreR = document.getElementById('score-r');
+        if (scoreL) scoreL.innerText = "0";
+        if (scoreR) scoreR.innerText = "0";
+
         const totalMatches = currentTab === 'ace' ? 1 : 9;
         for(let i=1; i<=totalMatches; i++) {
             const winL = document.getElementById(`win-l-${i}`);
@@ -367,11 +381,17 @@
         const storageKey = `star_proleague_saved_data_${currentTab}`;
         const savedRaw = localStorage.getItem(storageKey);
         
-        document.getElementById('league-title').value = currentTab === 'ace' ? "에이스 결정전" : `${currentTab.toUpperCase()} 매치`;
-        document.getElementById('team-l').value = "A팀";
-        document.getElementById('team-r').value = "B팀";
-        document.getElementById('score-l').innerText = "0";
-        document.getElementById('score-r').innerText = "0";
+        const leagueInput = document.getElementById('league-title');
+        const teamLInput = document.getElementById('team-l');
+        const teamRInput = document.getElementById('team-r');
+        const scoreL = document.getElementById('score-l');
+        const scoreR = document.getElementById('score-r');
+
+        if (leagueInput) leagueInput.value = currentTab === 'ace' ? "에이스 결정전" : `${currentTab.toUpperCase()} 매치`;
+        if (teamLInput) teamLInput.value = "A팀";
+        if (teamRInput) teamRInput.value = "B팀";
+        if (scoreL) scoreL.innerText = "0";
+        if (scoreR) scoreR.innerText = "0";
 
         if (!savedRaw) {
             isLoading = false;
@@ -381,11 +401,11 @@
         try {
             const data = JSON.parse(savedRaw);
 
-            if (data.leagueTitle) document.getElementById('league-title').value = data.leagueTitle;
-            if (data.teamL) document.getElementById('team-l').value = data.teamL;
-            if (data.teamR) document.getElementById('team-r').value = data.teamR;
-            if (data.scoreL !== undefined) document.getElementById('score-l').innerText = data.scoreL;
-            if (data.scoreR !== undefined) document.getElementById('score-r').innerText = data.scoreR;
+            if (data.leagueTitle && leagueInput) leagueInput.value = data.leagueTitle;
+            if (data.teamL && teamLInput) teamLInput.value = data.teamL;
+            if (data.teamR && teamRInput) teamRInput.value = data.teamR;
+            if (data.scoreL !== undefined && scoreL) scoreL.innerText = data.scoreL;
+            if (data.scoreR !== undefined && scoreR) scoreR.innerText = data.scoreR;
 
             if (data.isGlowOn !== undefined) {
                 isGlowOn = data.isGlowOn;
@@ -478,12 +498,18 @@
             });
         }
 
+        const leagueEl = document.getElementById('league-title');
+        const teamLEl = document.getElementById('team-l');
+        const teamREl = document.getElementById('team-r');
+        const scoreLEl = document.getElementById('score-l');
+        const scoreREl = document.getElementById('score-r');
+
         return {
-            leagueTitle: document.getElementById('league-title').value,
-            teamL: document.getElementById('team-l').value,
-            teamR: document.getElementById('team-r').value,
-            scoreL: document.getElementById('score-l').innerText,
-            scoreR: document.getElementById('score-r').innerText,
+            leagueTitle: leagueEl ? leagueEl.value : "",
+            teamL: teamLEl ? teamLEl.value : "",
+            teamR: teamREl ? teamREl.value : "",
+            scoreL: scoreLEl ? scoreLEl.innerText : "0",
+            scoreR: scoreREl ? scoreREl.innerText : "0",
             isGlowOn: isGlowOn,
             matches: matches
         };
