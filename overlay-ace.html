@@ -106,6 +106,14 @@
     function applyRemoteData(data) {
         if (!data) return;
 
+        // 🔴 방송 송출 ON / OFF 제어
+        if (data.isBroadcastOn === false) {
+            document.body.style.display = 'none';
+            return;
+        } else {
+            document.body.style.display = 'block';
+        }
+
         const container = document.getElementById('ace-container');
         const box = document.getElementById('content-box');
         const pLeft = document.getElementById('p-left');
