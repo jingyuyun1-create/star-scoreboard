@@ -56,6 +56,30 @@
         
         .p-input { width: 56px; text-align: center; flex-shrink: 0; }
         .map-input { width: 58px; text-align: center; flex-shrink: 0; }
+
+        /* 하단 방송 송출 ON/OFF 원버튼 스타일 */
+        .btn-broadcast {
+            width: 100%;
+            padding: 12px 0;
+            font-size: 15px;
+            font-weight: 900;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+        .btn-broadcast.on {
+            background: #2ed573;
+            color: #121316;
+            box-shadow: 0 0 12px rgba(46, 213, 115, 0.4);
+        }
+        .btn-broadcast.off {
+            background: #2b2d36;
+            color: #ff4757;
+            border: 1px solid #ff4757;
+        }
     </style>
 </head>
 <body>
@@ -117,6 +141,11 @@
         <div id="matches-container"></div>
     </div>
 
+    <!-- 하단 방송 송출 ON/OFF 토글 원버튼 -->
+    <button id="btn-broadcast-toggle" class="btn-broadcast on" onclick="toggleBroadcast()">
+        방송송출 ON 🟢
+    </button>
+
 <script>
     const ROOM_TARGETS = {
         'set1': 'star-proleague-room-set1',
@@ -128,6 +157,7 @@
     let peer = null;
     let conns = { 'set1': null, 'set2': null, 'ace': null };
     let isGlowOn = true;
+    let isBroadcastOn = true;
     let isLoading = false;
 
     function initPeer() {
@@ -326,6 +356,25 @@
         saveAndSend();
     }
 
+    function toggleBroadcast() {
+        isBroadcastOn = !isBroadcastOn;
+        updateBroadcastButtonUI();
+        saveAndSend();
+    }
+
+    function updateBroadcastButtonUI() {
+        const btn = document.getElementById('btn-broadcast-toggle');
+        if (!btn) return;
+
+        if (isBroadcastOn) {
+            btn.innerText = "방송송출 ON 🟢";
+            btn.className = "btn-broadcast on";
+        } else {
+            btn.innerText = "방송송출 OFF 🔴";
+            btn.className = "btn-broadcast off";
+        }
+    }
+
     function showNextMatch() {
         if (currentTab === 'ace') return;
         for(let i=1; i<=9; i++) {
@@ -386,7 +435,6 @@
         const scoreL = document.getElementById('score-l');
         const scoreR = document.getElementById('score-r');
 
-        // 기본값 세팅을 전부 완전한 빈 칸("")으로 수정
         if (leagueInput) leagueInput.value = "";
         if (teamLInput) teamLInput.value = "";
         if (teamRInput) teamRInput.value = "";
@@ -413,6 +461,8 @@
                 if (winL) winL.classList.remove('winner');
                 if (winR) winR.classList.remove('winner');
             }
+            isBroadcastOn = true;
+            updateBroadcastButtonUI();
             isLoading = false;
             return;
         }
@@ -433,6 +483,14 @@
                     btn.innerText = isGlowOn ? "불빛 끄기 OFF" : "불빛 켜기 ON";
                     btn.className = `btn-action ${isGlowOn ? 'active' : ''}`;
                 }
+            }
+
+            if (data.isBroadcastOn !== undefined) {
+                isBroadcastOn = data.isBroadcastOn;
+                updateBroadcastButtonUI();
+            } else {
+                isBroadcastOn = true;
+                updateBroadcastButtonUI();
             }
 
             if (data.matches && data.matches.length > 0) {
@@ -530,6 +588,7 @@
             scoreL: scoreLEl ? scoreLEl.innerText : "0",
             scoreR: scoreREl ? scoreREl.innerText : "0",
             isGlowOn: isGlowOn,
+            isBroadcastOn: isBroadcastOn,
             matches: matches
         };
     }
