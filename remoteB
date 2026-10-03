@@ -15,6 +15,11 @@
         .tab-btn:hover { background: #2a2d37; color: #fff; }
         .tab-btn.active { background: #ff5722; color: #fff; border-color: #ff5722; box-shadow: 0 0 10px rgba(255, 87, 34, 0.4); }
 
+        /* ACE 버튼 특별 강조 스타일 */
+        .tab-btn-ace { border-color: #ff0055; color: #ff0055; }
+        .tab-btn-ace:hover { background: rgba(255, 0, 85, 0.15); color: #fff; }
+        .tab-btn-ace.active { background: linear-gradient(135deg, #ff0055, #ff5722) !important; color: #fff !important; border-color: #ff0055 !important; box-shadow: 0 0 15px rgba(255, 0, 85, 0.7) !important; }
+
         .panel { background: #1a1b20; border: 1px solid #2e3038; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
         .panel-title { font-size: 13px; font-weight: 900; color: #ff5722; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
@@ -42,6 +47,7 @@
 
         .match-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 11px; color: #888; }
         .set-title { font-weight: 900; color: #fff; display: flex; align-items: center; gap: 4px; }
+        .ace-tag { color: #ff0055; font-weight: 900; font-size: 13px; letter-spacing: 0.5px; }
 
         .player-row { display: flex; gap: 3px; align-items: center; justify-content: space-between; }
         .race-select { background: #1a1b20; border: 1px solid #3a3d4a; color: #fff; font-size: 11px; padding: 4px 1px; border-radius: 3px; cursor: pointer; font-weight: 900; width: 68px; flex-shrink: 0; }
@@ -58,7 +64,7 @@
     <div class="tab-menu">
         <button id="tab-btn-set1" class="tab-btn active" onclick="switchTab('set1')">1Set</button>
         <button id="tab-btn-set2" class="tab-btn" onclick="switchTab('set2')">2Set</button>
-        <button id="tab-btn-ace" class="tab-btn" onclick="switchTab('ace')">ACE</button>
+        <button id="tab-btn-ace" class="tab-btn tab-btn-ace" onclick="switchTab('ace')">ACE</button>
     </div>
 
     <div class="panel">
@@ -98,7 +104,7 @@
 
         <div class="input-row" style="margin-top: 8px; justify-content: space-between;">
             <button id="btn-glow" class="btn-action active" onclick="toggleGlow()">불빛 끄기 OFF</button>
-            <div>
+            <div id="match-ctrl-btns">
                 <button class="btn-action" onclick="hideLastMatch()">경기 숨기기 ↩</button>
                 <button class="btn-action" onclick="showNextMatch()">다음 경기 공개 👁</button>
             </div>
@@ -121,7 +127,7 @@
     let peer = null;
     let conns = { 'set1': null, 'set2': null, 'ace': null };
     let isGlowOn = true;
-    let isLoading = false; // 💡 로딩 중 자동저장 방지용 플래그
+    let isLoading = false;
 
     function initPeer() {
         if (peer && !peer.destroyed) return;
@@ -189,6 +195,9 @@
         const tabTitleMap = { 'set1': '1Set 스코어보드', 'set2': '2Set 스코어보드', 'ace': 'ACE 에이스 결정전' };
         document.getElementById('console-header-title').innerText = `${tabTitleMap[tabName]} 제어`;
 
+        const ctrlBtns = document.getElementById('match-ctrl-btns');
+        if (ctrlBtns) ctrlBtns.style.display = tabName === 'ace' ? 'none' : 'block';
+
         renderMatches();
         loadSavedData();
         updateStatus();
@@ -199,18 +208,24 @@
         if (!container) return;
         container.innerHTML = '';
 
-        const totalMatches = currentTab === 'ace' ? 1 : 9;
+        const isAce = currentTab === 'ace';
+        const totalMatches = isAce ? 1 : 9;
 
         for(let i = 1; i <= totalMatches; i++) {
             const card = document.createElement('div');
             card.className = `match-card ${i===1?'active-set':''}`;
             card.id = `card-${i}`;
+
+            const setLabelHtml = isAce 
+                ? `<span class="ace-tag">🔥 ACE</span>`
+                : `<span class="set-title">
+                    <input type="radio" name="active-set" value="${i}" ${i===1?'checked':''} onchange="setActiveSet(${i})">
+                    ${i}세트 경기
+                   </span>`;
+
             card.innerHTML = `
                 <div class="match-header">
-                    <span class="set-title">
-                        <input type="radio" name="active-set" value="${i}" ${i===1?'checked':''} onchange="setActiveSet(${i})">
-                        ${currentTab === 'ace' ? 'ACE 결정전 Match' : i + '세트 경기'}
-                    </span>
+                    ${setLabelHtml}
                     <label style="cursor:pointer;">
                         <input type="checkbox" id="vis-${i}" ${i===1?'checked':''} onchange="saveAndSend()"> 화면 표시
                     </label>
@@ -222,13 +237,13 @@
                         <option value="color-zerg">저그(Z)</option>
                         <option value="color-protoss">프로토스(P)</option>
                     </select>
-                    <input type="text" id="p-l-${i}" class="p-input" value="선수A" oninput="saveAndSend()">
+                    <input type="text" id="p-l-${i}" class="p-input" value="" placeholder="선수A" oninput="saveAndSend()">
                     <button id="win-l-${i}" class="btn-win" onclick="setWinner(${i}, 'left')">🏆 승</button>
                     
-                    <input type="text" id="map-${i}" class="map-input" value="맵이름" oninput="saveAndSend()">
+                    <input type="text" id="map-${i}" class="map-input" value="" placeholder="맵이름" oninput="saveAndSend()">
                     
                     <button id="win-r-${i}" class="btn-win" onclick="setWinner(${i}, 'right')">🏆 승</button>
-                    <input type="text" id="p-r-${i}" class="p-input" value="선수B" oninput="saveAndSend()">
+                    <input type="text" id="p-r-${i}" class="p-input" value="" placeholder="선수B" oninput="saveAndSend()">
                     <select id="race-r-${i}" class="race-select" onchange="saveAndSend()">
                         <option value="color-default">선택안함</option>
                         <option value="color-terran">테란(T)</option>
@@ -302,8 +317,8 @@
     }
 
     function showNextMatch() {
-        const totalMatches = currentTab === 'ace' ? 1 : 9;
-        for(let i=1; i<=totalMatches; i++) {
+        if (currentTab === 'ace') return;
+        for(let i=1; i<=9; i++) {
             const chk = document.getElementById(`vis-${i}`);
             if(chk && !chk.checked) {
                 chk.checked = true;
@@ -314,8 +329,8 @@
     }
 
     function hideLastMatch() {
-        const totalMatches = currentTab === 'ace' ? 1 : 9;
-        for(let i=totalMatches; i>=1; i--) {
+        if (currentTab === 'ace') return;
+        for(let i=9; i>=1; i--) {
             const chk = document.getElementById(`vis-${i}`);
             if(chk && chk.checked && i > 1) {
                 chk.checked = false;
@@ -343,10 +358,11 @@
         if(!confirm(`현재 탭 [${currentTab.toUpperCase()}] 의 모든 설정을 초기화하시겠습니까?`)) return;
         localStorage.removeItem(`star_proleague_saved_data_${currentTab}`);
         switchTab(currentTab);
+        saveAndSend();
     }
 
     function loadSavedData() {
-        isLoading = true; // 💡 데이터를 읽어오는 중에는 자동 저장 막기
+        isLoading = true;
 
         const storageKey = `star_proleague_saved_data_${currentTab}`;
         const savedRaw = localStorage.getItem(storageKey);
@@ -381,8 +397,12 @@
             }
 
             if (data.matches && data.matches.length > 0) {
-                data.matches.forEach((m, idx) => {
+                const totalMatches = currentTab === 'ace' ? 1 : data.matches.length;
+                for(let idx = 0; idx < totalMatches; idx++) {
+                    const m = data.matches[idx];
+                    if (!m) continue;
                     const i = idx + 1;
+
                     const visChk = document.getElementById(`vis-${i}`);
                     if (visChk) visChk.checked = m.visible;
 
@@ -411,12 +431,12 @@
 
                     if (m.winner === 'left' && winL) winL.classList.add('winner');
                     if (m.winner === 'right' && winR) winR.classList.add('winner');
-                });
+                }
             }
         } catch(e) {
             console.error("데이터 로드 오류:", e);
         } finally {
-            isLoading = false; // 💡 로딩 완료 후 저장 기능 다시 활성화
+            isLoading = false;
         }
     }
 
@@ -428,7 +448,7 @@
             const visChk = document.getElementById(`vis-${i}`);
             const isVis = visChk ? visChk.checked : true;
             const activeRadios = document.querySelectorAll(`input[name="active-set"]`);
-            const isAct = activeRadios[i-1] ? activeRadios[i-1].checked : false;
+            const isAct = currentTab === 'ace' ? true : (activeRadios[i-1] ? activeRadios[i-1].checked : false);
             
             const card = document.getElementById(`card-${i}`);
             if (card) {
@@ -449,9 +469,9 @@
             matches.push({
                 visible: isVis,
                 active: isAct,
-                playerL: pL ? (pL.value || " ") : " ",
-                playerR: pR ? (pR.value || " ") : " ",
-                map: map ? (map.value || " ") : " ",
+                playerL: pL ? pL.value : "",
+                playerR: pR ? pR.value : "",
+                map: map ? map.value : "",
                 raceL: raceL ? raceL.value : 'color-default',
                 raceR: raceR ? raceR.value : 'color-default',
                 winner: isWinL ? 'left' : (isWinR ? 'right' : 'none')
@@ -470,7 +490,7 @@
     }
 
     function saveAndSend() {
-        if (isLoading) return; // 💡 로딩 중일 때는 자동저장을 하지 않고 무시함
+        if (isLoading) return;
 
         const data = collectCurrentTabData();
         localStorage.setItem(`star_proleague_saved_data_${currentTab}`, JSON.stringify(data));
